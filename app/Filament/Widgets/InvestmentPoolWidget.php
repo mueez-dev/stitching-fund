@@ -30,16 +30,16 @@ class InvestmentPoolWidget extends ChartWidget
             ->where('user_id', $user->id)
             ->sum('initial_investment') ?? 0;
         
-        // Get active pool amount
+        // Get active pool amount (using payment_status = 'complete' for active investments)
         $activePool = DB::table('lats')
             ->where('user_id', $user->id)
-            ->where('status', 'active')
+            ->where('payment_status', 'complete')
             ->sum('initial_investment') ?? 0;
         
-        // Get open pool amount
+        // Get open pool amount (using payment_status = 'pending' for open/pending investments)
         $openPool = DB::table('lats')
             ->where('user_id', $user->id)
-            ->where('status', 'open')
+            ->where('payment_status', 'pending')
             ->sum('initial_investment') ?? 0;
         
         // Prepare data for donut chart
@@ -67,8 +67,8 @@ class InvestmentPoolWidget extends ChartWidget
                 ],
             ],
             'labels' => [
-                'Active Pool (' . number_format($activePool, 2) . ') - ' . ($total > 0 ? round(($activePool / $total) * 100, 1) : 0) . '%',
-                'Open Pool (' . number_format($openPool, 2) . ') - ' . ($total > 0 ? round(($openPool / $total) * 100, 1) : 0) . '%',
+                'Completed Investments (' . number_format($activePool, 2) . ') - ' . ($total > 0 ? round(($activePool / $total) * 100, 1) : 0) . '%',
+                'Pending Investments (' . number_format($openPool, 2) . ') - ' . ($total > 0 ? round(($openPool / $total) * 100, 1) : 0) . '%',
             ],
         ];
     }

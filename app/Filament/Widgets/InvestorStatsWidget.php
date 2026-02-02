@@ -36,13 +36,13 @@ class InvestorStatsWidget extends StatsOverviewWidget
         $totalInvested = DB::table('lats')
             ->where('user_id', $user->id)
             ->where('payment_status', 'complete')
-            ->sum('invested_amount') ?? 0;
+            ->sum('initial_investment') ?? 0;
         
         // Calculate pending payments
         $pendingPayments = DB::table('lats')
             ->where('user_id', $user->id)
             ->where('payment_status', 'pending')
-            ->sum('invested_amount') ?? 0;
+            ->sum('initial_investment') ?? 0;
         
         // Count completed investments
         $completedPayments = DB::table('lats')
