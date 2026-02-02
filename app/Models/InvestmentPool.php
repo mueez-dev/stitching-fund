@@ -195,51 +195,64 @@ class InvestmentPool extends Model
                 }
             }
             
-            // Calculate and ensure equal distribution of investment amounts
-            if (isset($investmentPool->partners) && is_array($investmentPool->partners) && isset($investmentPool->amount_required)) {
+            // Calculate totals with smart distribution logic
+            if (isset($investmentPool->partners) && is_array($investmentPool->partners)) {
+                $partners = $investmentPool->partners;
                 $amountRequired = floatval($investmentPool->amount_required);
                 $numberOfPartners = intval($investmentPool->number_of_partners);
                 
-                if ($numberOfPartners > 0 && $amountRequired > 0) {
-                    $perPartnerAmount = $amountRequired / $numberOfPartners;
-                    
-                    // Create a copy of partners array to modify
-                    $partners = $investmentPool->partners;
-                    
-                    // Update each partner's investment amount to ensure equal distribution
-                    foreach ($partners as $index => $partner) {
-                        if (!empty($partner['investor_id'])) {
-                            $partners[$index]['investment_amount'] = round($perPartnerAmount, 0);
-                            $partners[$index]['investment_percentage'] = round(($perPartnerAmount / $amountRequired) * 100, 2);
-                        }
-                    }
-                    
-                    // Update partners property with modified array and save
-                    $investmentPool->partners = $partners;
-                    $investmentPool->saveQuietly(); // Save without firing events again
-                    
-                    // Calculate totals
-                    $totalCollected = 0;
-                    foreach ($partners as $partner) {
-                        if (isset($partner['investment_amount'])) {
+                // Check if partners have custom investment amounts
+                $hasCustomAmounts = false;
+                $totalCollected = 0;
+                $validPartners = [];
+                
+                foreach ($partners as $index => $partner) {
+                    if (!empty($partner['investor_id'])) {
+                        $validPartners[] = $index;
+                        
+                        if (isset($partner['investment_amount']) && floatval($partner['investment_amount']) > 0) {
+                            $hasCustomAmounts = true;
                             $totalCollected += floatval($partner['investment_amount']);
                         }
                     }
-                    
-                    // Update pool totals
-                    $investmentPool->total_collected = $totalCollected;
-                    $investmentPool->percentage_collected = (int) min(100, round(($totalCollected / $amountRequired) * 100));
-                    $investmentPool->remaining_amount = max(0, $amountRequired - $totalCollected);
-                    
-                    // Update status based on remaining amount
-                    if ($investmentPool->remaining_amount > 0) {
-                        $investmentPool->status = self::STATUS_OPEN;
-                    } else {
-                        $investmentPool->status = self::STATUS_ACTIVE;
-                    }
-                    
-                    $investmentPool->saveQuietly();
                 }
+                
+                // If no custom amounts, apply equal distribution as default
+                if (!$hasCustomAmounts && $numberOfPartners > 0 && $amountRequired > 0) {
+                    $perPartnerAmount = $amountRequired / $numberOfPartners;
+                    $perPartnerPercentage = (100 / $numberOfPartners);
+                    
+                    foreach ($validPartners as $index) {
+                        $partners[$index]['investment_amount'] = round($perPartnerAmount, 0);
+                        $partners[$index]['investment_percentage'] = round($perPartnerPercentage, 2);
+                        $totalCollected += floatval($partners[$index]['investment_amount']);
+                    }
+                } 
+                // If custom amounts exist, calculate percentages based on actual amounts
+                elseif ($hasCustomAmounts && $totalCollected > 0) {
+                    foreach ($validPartners as $index) {
+                        $investmentAmount = floatval($partners[$index]['investment_amount']);
+                        $calculatedPercentage = round(($investmentAmount / $totalCollected) * 100, 2);
+                        $partners[$index]['investment_percentage'] = $calculatedPercentage;
+                    }
+                }
+                
+                // Update partners with calculated data
+                $investmentPool->partners = $partners;
+                
+                // Update pool totals
+                $investmentPool->total_collected = $totalCollected;
+                $investmentPool->percentage_collected = (int) min(100, round(($totalCollected / $amountRequired) * 100));
+                $investmentPool->remaining_amount = max(0, $amountRequired - $totalCollected);
+                
+                // Update status based on remaining amount
+                if ($investmentPool->remaining_amount > 0) {
+                    $investmentPool->status = self::STATUS_OPEN;
+                } else {
+                    $investmentPool->status = self::STATUS_ACTIVE;
+                }
+                
+                $investmentPool->saveQuietly();
             }
             
             // Process wallet allocations for partners

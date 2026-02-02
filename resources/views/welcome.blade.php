@@ -10,7 +10,7 @@
                 </div>
                 <div class="flex items-center space-x-4">
                     @auth
-                        <a href="{{ url('/admin/dashboard') }}" class="text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">
+                        <a href="{{ url('/admin') }}" class="text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">
                             Dashboard
                         </a>
                     @else
@@ -48,7 +48,7 @@
               Purchasing, cutting, stitching, finishing, orders, timelines, and reports — all managed in one powerful platform.
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ route('filament.admin.auth.register') }}" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-transparent hover:text-white  hover:border-2 hover:border-white">
+                <a href="{{ route('filament.admin.auth.register') }}" class="bg-white border-white border-2 text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-transparent hover:text-white  hover:border-2 hover:border-white">
                     Start Managing Production
                 </a>
                 

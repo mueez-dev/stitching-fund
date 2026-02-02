@@ -25,6 +25,7 @@ class WalletTable
         return $table
             ->contentGrid(function () {
                 return [
+                    'sm' => 1,
                     'md' => 2,
                     'lg' => 3,
                 ];
@@ -36,7 +37,17 @@ class WalletTable
                         $user = Auth::user();
                         $availableBalance = $record->available_balance;
                         $totalInvested = $record->total_invested;
-                        $walletStatus = $record->wallet_status;
+                        
+                        // Safe wallet status calculation
+                        $walletStatus = [
+                            'status' => 'healthy'
+                        ];
+                        
+                        if ($availableBalance == 0) {
+                            $walletStatus['status'] = 'empty';
+                        } elseif ($availableBalance < 50000) {
+                            $walletStatus['status'] = 'low';
+                        }
                         
                         // Determine card color based on status
                         $bgColor = match($walletStatus['status']) {
@@ -46,28 +57,39 @@ class WalletTable
                             default => 'bg-gradient-to-br from-blue-500 to-indigo-600'
                         };
 
+                        // Safe date formatting
+                        $lastDepositDate = 'Unknown';
+                        try {
+                            if ($record->deposited_at) {
+                                $lastDepositDate = $record->deposited_at->format('M d, Y');
+                            }
+                        } catch (\Exception $e) {
+                            // Use fallback date if formatting fails
+                            $lastDepositDate = 'Recent';
+                        }
+
                         $cardHtml = '
-                            <div class="' . $bgColor . ' rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+                            <div class="' . $bgColor . ' rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-xl transition-shadow duration-300">
                                 <!-- Header -->
-                                <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 class="text-xl font-bold mb-1">' . ($record->investor->name ?? 'Unknown Investor') . '</h3>
-                                        <p class="text-sm opacity-90">' . ($record->agencyOwner->name ?? 'Unknown Agency') . '</p>
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4">
+                                    <div class="mb-2 sm:mb-0">
+                                        <h3 class="text-lg sm:text-xl font-bold mb-1">' . ($record->investor->name ?? 'Unknown Investor') . '</h3>
+                                        <p class="text-xs sm:text-sm opacity-90">' . ($record->agencyOwner->name ?? 'Unknown Agency') . '</p>
                                     </div>
-                                    <div class="bg-white/20 px-3 py-1 rounded-full text-xs font-semibold">
+                                    <div class="bg-white/20 px-2 sm:px-3 py-1 rounded-full text-xs font-semibold">
                                         ' . ucfirst($walletStatus['status']) . '
                                     </div>
                                 </div>
                                 
                                 <!-- Balance Display -->
-                                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-4">
-                                    <div class="text-sm opacity-90 mb-1">Available Balance</div>
-                                    <div class="text-3xl font-bold mb-1">PKR ' . number_format($availableBalance) . '</div>
+                                <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4 mb-4">
+                                    <div class="text-xs sm:text-sm opacity-90 mb-1">Available Balance</div>
+                                    <div class="text-2xl sm:text-3xl font-bold mb-1">PKR ' . number_format($availableBalance) . '</div>
                                     <div class="text-xs opacity-80">+12.5% this month</div>
                                 </div>
                                 
                                 <!-- Summary Stats -->
-                                <div class="grid grid-cols-3 gap-2 mb-4">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
                                     <div class="bg-white/10 rounded-lg p-2 text-center">
                                         <div class="text-xs opacity-80">Lifetime Deposited</div>
                                         <div class="text-sm font-semibold">PKR ' . number_format($record->amount, 0) . '</div>
@@ -109,7 +131,7 @@ class WalletTable
                                 <!-- Footer Info -->
                                 <div class="flex justify-between items-center mt-4 pt-4 border-t border-white/20">
                                     <div class="text-xs opacity-80">
-                                        Last deposit: ' . $record->deposited_at->format('M d, Y') . '
+                                        Last deposit: ' . $lastDepositDate . '
                                     </div>
                                     <div class="text-xs opacity-80">
                                         ' . ($record->slip_type ? ucfirst(str_replace('_', ' ', $record->slip_type)) : 'Bank Transfer') . '
