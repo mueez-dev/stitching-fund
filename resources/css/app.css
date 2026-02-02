@@ -9,3 +9,13 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* Force warning color for rating stars */
+.text-warning-500 {
+    color: #f59e0b !important;
+}
+
+/* Ensure stars are visible */
+label.text-warning-500 {
+    color: #f59e0b !important;
+}

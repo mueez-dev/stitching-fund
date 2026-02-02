@@ -47,4 +47,24 @@ Route::get('/demo/register', [DemoRegisterController::class, 'show'])
 Route::post('/demo/register', [DemoRegisterController::class, 'store'])
     ->name('demo.register.store');
 
+// API route for all reviews
+Route::get('/api/all-reviews', function () {
+    $reviews = \App\Models\Review::where('status', 'approved')
+        ->with('user:id,name')
+        ->latest()
+        ->get()
+        ->map(function ($review) {
+            return [
+                'id' => $review->id,
+                'review_text' => $review->review_text,
+                'rating' => $review->rating,
+                'status' => $review->status,
+                'user_name' => $review->user->name ?? 'Anonymous',
+                'created_at' => $review->created_at,
+            ];
+        });
+    
+    return response()->json(['reviews' => $reviews]);
+});
+
 

@@ -167,6 +167,97 @@
         </div>
     </section>
 
+    <!-- Reviews Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    What Our Users Say
+                </h3>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Real reviews from real users managing their clothing production with ZARYQ
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                @php
+                    $reviews = \App\Models\Review::where('status', 'approved')->latest()->take(9)->get();
+                @endphp
+                
+                @forelse($reviews as $review)
+                    <div class="bg-gray-50 p-6 rounded-xl hover:shadow-lg transition">
+                        <!-- User Info Section -->
+                        <div class="flex items-center mb-4">
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                                <span class="text-purple-600 font-semibold text-sm">
+                                    {{ $review->user->name ? strtoupper(substr($review->user->name, 0, 1)) : 'A' }}
+                                </span>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900">{{ $review->user->name ?? 'Anonymous' }}</p>
+                                <p class="text-sm text-gray-500">{{ \Carbon\Carbon::parse($review->created_at)->format('M d, Y') }}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Stars Section -->
+                        <div class="flex items-center mb-4">
+                            @php
+                                $starColor = $review->rating >= 5 ? '#22c55e' : ($review->rating >= 4 ? '#4b5563' : '#fb923c');
+                            @endphp
+                            <div class="flex items-center">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    @if($i <= $review->rating)
+                                        <svg width="20" height="20" style="color: {{ $starColor }}; margin-right: 2px;" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                    @else
+                                        <svg width="20" height="20" style="color: #d1d5db; margin-right: 2px;" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                    @endif
+                                @endfor
+                                <span style="margin-left: 6px; font-size: 14px; font-weight: 500; color: {{ $starColor }};">({{ $review->rating }}/5)</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Review Text Section (3 lines with ellipsis) -->
+                        <div class="text-gray-700 text-sm leading-relaxed" style="
+                            display: -webkit-box;
+                            -webkit-line-clamp: 3;
+                            -webkit-box-orient: vertical;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            max-height: 4.5em;
+                            line-height: 1.5em;
+                        ">
+                            {{ $review->review_text }}
+                        </div>
+                    </div>
+                @empty
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-gray-500 text-lg">No reviews yet. Be the first to share your experience!</p>
+                    </div>
+                @endforelse
+            </div>
+
+            @if($reviews->count() > 0)
+                <div class="text-center mt-12 space-x-4">
+                    <a href="{{ route('filament.admin.auth.register') }}" class="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition">
+                        Share Your Experience
+                    </a>
+                    @php
+                        $totalReviews = \App\Models\Review::where('status', 'approved')->count();
+                    @endphp
+                    @if($totalReviews > 9)
+                        <button onclick="showAllReviews()" class="bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-700 transition">
+                            View All Reviews ({{ $totalReviews }})
+                        </button>
+                    @endif
+                </div>
+            @endif
+        </div>
+    </section>
+
     <!-- Video Demo Section -->
     <section class="py-20 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -303,5 +394,90 @@
             <p>&copy; 2026 ZARYQ - From Fabric to Finish.</p>
         </div>
     </footer>
+
+    <!-- All Reviews Modal -->
+    <div id="allReviewsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl max-w-6xl w-full max-h-[80vh] overflow-hidden">
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-2xl font-bold text-gray-900">All Reviews</h3>
+                        <button onclick="closeAllReviews()" class="text-gray-500 hover:text-gray-700">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6 overflow-y-auto max-h-[60vh]">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="allReviewsContainer">
+                        <!-- Reviews will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showAllReviews() {
+            document.getElementById('allReviewsModal').classList.remove('hidden');
+            loadAllReviews();
+        }
+
+        function closeAllReviews() {
+            document.getElementById('allReviewsModal').classList.add('hidden');
+        }
+
+        function loadAllReviews() {
+            fetch('/api/all-reviews')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('allReviewsContainer');
+                    container.innerHTML = '';
+                    
+                    data.reviews.forEach(review => {
+                        const starColor = review.rating >= 5 ? '#22c55e' : (review.rating >= 4 ? '#4b5563' : '#fb923c');
+                        let stars = '';
+                        
+                        for (let i = 1; i <= 5; i++) {
+                            if (i <= review.rating) {
+                                stars += `<svg width="20" height="20" style="color: ${starColor}; margin-right: 2px;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>`;
+                            } else {
+                                stars += `<svg width="20" height="20" style="color: #d1d5db; margin-right: 2px;" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>`;
+                            }
+                        }
+
+                        const reviewCard = `
+                            <div class="bg-gray-50 p-6 rounded-xl">
+                                <div class="flex items-center mb-4">
+                                    <div class="flex items-center">
+                                        ${stars}
+                                        <span style="margin-left: 6px; font-size: 14px; font-weight: 500; color: ${starColor};">(${review.rating}/5)</span>
+                                    </div>
+                                </div>
+                                <p class="text-gray-700 mb-4">${review.review_text}</p>
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                                        <span class="text-purple-600 font-semibold text-sm">
+                                            ${review.user_name ? review.user_name.charAt(0).toUpperCase() : 'A'}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">${review.user_name || 'Anonymous'}</p>
+                                        <p class="text-sm text-gray-500">${new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.innerHTML += reviewCard;
+                    });
+                })
+                .catch(error => console.error('Error loading reviews:', error));
+        }
+    </script>
 
 @endsection
