@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
         // Always update superadmin to ensure status is active
         $superAdmin->fill([
             'name' => 'Super Admin',
-            'password' => Hash::make('asadmin!123'), // Change this to a secure password
+            'password' => Hash::make('asadmin!x123'), // Change this to a secure password
             'email_verified_at' => now(),
             'role' => 'Super Admin',
             'status' => 'active', // Super Admin should be active by default
