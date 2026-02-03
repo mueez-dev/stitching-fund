@@ -27,9 +27,9 @@ class ReviewForm
                 Textarea::make('review_text')
                     ->required()
                     ->columnSpanFull()
-                    ->rows(8)
-                    ->maxLength(5000)
-                    ->helperText('Maximum 5000 characters allowed'),
+                    ->rows(4)
+                    ->maxLength(500)
+                    ->helperText('Maximum 500 characters allowed'),
               
 
                 StarColumnHelper::makeStarRatingField('rating')
