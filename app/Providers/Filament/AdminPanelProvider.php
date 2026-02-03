@@ -37,6 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->registration(Register::class)
+            ->passwordReset()
             ->brandName('ZARYQ')
             ->brandLogo(asset('images/logo.png'))
             ->brandLogoHeight('3.5rem')

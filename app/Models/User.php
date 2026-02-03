@@ -13,10 +13,11 @@ use Filament\Models\Contracts\FilamentUser;
 use App\Notifications\NewUserWaitingApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Auth\Passwords\CanResetPassword;
 
 class User extends Authenticatable implements FilamentUser
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, CanResetPassword;
 
     protected $fillable = [
         'name',
