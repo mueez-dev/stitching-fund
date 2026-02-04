@@ -5,11 +5,14 @@ namespace App\Filament\Pages\Auth;
 use App\Models\User;
 use App\Models\UserInvitation;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\TextInput;
 use Filament\Auth\Pages\Register as BaseRegister;
+use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
+use Filament\Notifications\Notification;
+use App\Filament\Pages\Auth\EmailVerification; // Add this import
 
 class Register extends BaseRegister
 {
@@ -31,21 +34,10 @@ class Register extends BaseRegister
         if ($this->isDemoRegistration) {
             session(['is_demo_registration' => true]);
         }
-        
-        // Debug: Log demo registration detection
-        Log::info('Register mount - Demo registration detected:', [
-            'isDemoRegistration' => $this->isDemoRegistration,
-            'demo_param' => request('demo'),
-            'all_params' => request()->all()
-        ]);
 
         if ($this->invitationCode) {
-            Log::info('Mount method - Invitation code found:', ['invitationCode' => $this->invitationCode]);
-
             $this->invitation = UserInvitation::where('unique_code', $this->invitationCode)
                 ->first();
-
-            Log::info('Mount method - Invitation query result:', ['invitation' => $this->invitation]);
 
             if ($this->invitation) {
                 if ($this->invitation->status === 'pending' &&
@@ -61,12 +53,6 @@ class Register extends BaseRegister
                         'role' => 'Investor',
                         'status' => 'active',
                         'invited_by' => $this->invitationData['invited_by']
-                    ]);
-
-                    Log::info('Pending invitation found and form pre-filled:', [
-                        'invitation_id' => $this->invitationData['id'],
-                        'invited_by' => $this->invitationData['invited_by'],
-                        'email' => $this->invitationData['email']
                     ]);
                 } else {
                     $this->handleInvalidOrUsedInvitation($this->invitationCode);
@@ -108,13 +94,34 @@ class Register extends BaseRegister
             }
         }
 
-        \Filament\Notifications\Notification::make()
+        Notification::make()
             ->title('Invitation Not Valid')
             ->body($message)
             ->danger()
             ->send();
 
         $this->redirect(route('filament.admin.auth.register'));
+    }
+
+    // CRITICAL: Override register method to prevent auto-login
+    public function register(): ?RegistrationResponse
+    {
+        $data = $this->form->getState();
+
+        // Create the user without logging them in
+        $user = $this->handleRegistration($data);
+
+        // DO NOT call parent::register() or auth()->login()
+        
+        // Create custom response to redirect to verification page
+        $response = new class implements RegistrationResponse {
+            public function toResponse($request)
+            {
+                return redirect('/admin/email-verification');
+            }
+        };
+        
+        return $response;
     }
 
     // Form fields
@@ -124,15 +131,6 @@ class Register extends BaseRegister
         $isInvitation = ! empty($invitation);
         // Check URL parameter first, then session as fallback
         $isDemoRegistration = request('demo') === 'true' || session('is_demo_registration', false);
-
-        Log::info('Form method - Invitation status:', [
-            'isInvitation' => $isInvitation,
-            'invitationCode' => $this->invitationCode,
-            'invited_by' => $invitation->invited_by ?? null,
-            'isDemoRegistration' => $isDemoRegistration,
-            'url_param' => request('demo'),
-            'session_flag' => session('is_demo_registration')
-        ]);
 
         $components = [
             $this->getNameFormComponent(),
@@ -224,7 +222,7 @@ class Register extends BaseRegister
         $user = User::create([
             'name' => $mutatedData['name'],
             'email' => $mutatedData['email'],
-            'password' => $mutatedData['password'], // Already hashed by Filament
+            'password' => Hash::make($data['password']), // Hash password here
             'role' => $mutatedData['role'],
             'status' => $mutatedData['status'] ?? 'inactive',
             'invited_by' => $mutatedData['invited_by'] ?? null,
@@ -233,14 +231,6 @@ class Register extends BaseRegister
             'demo_expires_at' => $mutatedData['demo_expires_at'] ?? null,
         ]);
         
-       
-        
-        Log::info('Registration data:', [
-        'data' => $data,
-        'mutated_data' => $mutatedData,
-        'invitation' => $this->invitation ? $this->invitation->toArray() : null
-        ]);
-
         // Mark invitation accepted and link user
         if ($this->invitation) {
             $this->invitation->update([
@@ -250,6 +240,63 @@ class Register extends BaseRegister
             ]);
         }
 
+        // Generate verification code and send email
+        $this->sendEmailVerification($user);
+
+        // Store email in session for verification page
+        session(['verification_email' => $user->email]);
+        
+        // Ensure user is logged out (prevent any auto-login)
+        Auth::logout();
+
+        // Return user WITHOUT logging them in
         return $user;
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            \Filament\Actions\Action::make('register')
+                ->label('Register')
+                ->submit('register')
+                ->color('primary'),
+        ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        // Use EmailVerification page's getUrl() method
+        return EmailVerification::getUrl();
+    }
+
+    protected function sendEmailVerification(User $user): void
+    {
+        // Generate 6-digit verification code
+        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $hashedCode = Hash::make($code);
+
+        // Update user with verification code
+        $user->update([
+            'email_verification_code' => $hashedCode,
+            'email_verification_expires_at' => now()->addMinutes(15),
+        ]);
+
+        // Send verification email
+        try {
+            $user->notify(new \App\Notifications\EmailVerificationNotification($code));
+
+            Notification::make()
+                ->title('Registration Successful')
+                ->body('A verification code has been sent to your email.')
+                ->success()
+                ->send();
+
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Email Error')
+                ->body('Could not send verification email. Please contact support.')
+                ->warning()
+                ->send();
+        }
     }
 }

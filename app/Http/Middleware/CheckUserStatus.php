@@ -18,9 +18,22 @@ class CheckUserStatus
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Skip middleware for auth pages and verification page
+        if ($request->is('admin/login') || 
+            $request->is('admin/register') || 
+            $request->is('admin/email-verification') ||
+            $request->is('admin/password/*')) {
+            return $next($request);
+        }
+
         if (Auth::check()) {
             /** @var \App\Models\User $user */
             $user = Auth::user();
+            
+            // Skip status check if user needs email verification
+            if (is_null($user->email_verified_at) && $user->email_verification_code) {
+                return $next($request);
+            }
             
             // Send login notification only once per session
             if (!session()->has('login_notification_sent')) {
@@ -68,7 +81,7 @@ class CheckUserStatus
                     if (!session()->has('demo_expired_notification_sent')) {
                         Notification::make()
                             ->title('Demo Account Expired')
-                            ->body('Your demo account has expired . Please upgrade to continue using our services.')
+                            ->body('Your demo account has expired. Please upgrade to continue using our services.')
                             ->danger()
                             ->sendToDatabase($user);
                         session()->put('demo_expired_notification_sent', true);

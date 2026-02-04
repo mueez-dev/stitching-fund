@@ -14,10 +14,12 @@ use App\Notifications\NewUserWaitingApproval;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, MustVerifyEmailContract
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, CanResetPassword;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, CanResetPassword, MustVerifyEmail;
 
     protected $fillable = [
         'name',
@@ -27,7 +29,9 @@ class User extends Authenticatable implements FilamentUser
         'status',
         'invited_by',
         'is_demo',
-        'demo_expires_at'
+        'demo_expires_at',
+        'email_verified_at',
+        'email_verification_code'
     ];
 
     protected $hidden = [
@@ -37,6 +41,7 @@ class User extends Authenticatable implements FilamentUser
     protected $casts = [
     'is_demo' => 'boolean',
     'demo_expires_at' => 'datetime',
+    'email_verified_at' => 'datetime',
     ];
 
 

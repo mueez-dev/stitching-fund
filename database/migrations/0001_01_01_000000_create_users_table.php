@@ -25,6 +25,8 @@ return new class extends Migration
                 ->nullOnDelete();
             $table->boolean('is_demo')->default(false);
             $table->timestamp('demo_expires_at')->nullable();
+            $table->string('email_verification_code')->nullable();
+            $table->timestamp('email_verification_expires_at')->nullable();
 
             $table->rememberToken();
             $table->timestamps();

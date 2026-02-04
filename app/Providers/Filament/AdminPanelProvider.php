@@ -80,6 +80,14 @@ class AdminPanelProvider extends PanelProvider
                InvestmentPerformanceWidget::class,
                InvestmentPoolWidget::class,
             ])
+            ->authMiddleware([
+                FilamentAuthenticate::class,
+                CheckUserStatus::class,
+            ], isPersistent: true)
+            ->renderHook(
+                'panels::auth.before',
+                fn (): string => '',
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -90,10 +98,6 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-            ])
-            ->authMiddleware([
-                FilamentAuthenticate::class,
-                CheckUserStatus::class,
             ]);
     }
 }
