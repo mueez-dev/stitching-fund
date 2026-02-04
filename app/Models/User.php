@@ -31,7 +31,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
         'is_demo',
         'demo_expires_at',
         'email_verified_at',
-        'email_verification_code'
+        'email_verification_code',
+        'email_verification_expires_at'
     ];
 
     protected $hidden = [
@@ -42,6 +43,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
     'is_demo' => 'boolean',
     'demo_expires_at' => 'datetime',
     'email_verified_at' => 'datetime',
+    'email_verification_expires_at' => 'datetime',
     ];
 
 
