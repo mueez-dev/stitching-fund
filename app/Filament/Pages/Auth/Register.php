@@ -12,7 +12,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Auth\Pages\Register as BaseRegister;
 use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
 use Filament\Notifications\Notification;
-use App\Filament\Pages\Auth\EmailVerification; // Add this import
 
 class Register extends BaseRegister
 {
@@ -265,8 +264,7 @@ class Register extends BaseRegister
 
     protected function getRedirectUrl(): string
     {
-        // Use EmailVerification page's getUrl() method
-        return EmailVerification::getUrl();
+        return route('email-verification');
     }
 
     protected function sendEmailVerification(User $user): void
@@ -275,11 +273,13 @@ class Register extends BaseRegister
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $hashedCode = Hash::make($code);
 
-        // Update user with verification code
-        $user->update([
-            'email_verification_code' => $hashedCode,
-            'email_verification_expires_at' => now()->addMinutes(15),
-        ]);
+        // Update user with verification code using raw database update
+        \Illuminate\Support\Facades\DB::table('users')
+            ->where('id', $user->id)
+            ->update([
+                'email_verification_code' => $hashedCode,
+                'email_verification_expires_at' => now()->addMinutes(15),
+            ]);
 
         // Send verification email
         try {
