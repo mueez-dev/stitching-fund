@@ -71,7 +71,7 @@ class Register extends BaseRegister
             // Direct registration for Agency Owner
             $this->form->fill([
                 'role' => 'Agency Owner',
-                'status' => 'inactive'
+                'status' => 'active'
             ]);
         }
     }
@@ -207,7 +207,7 @@ class Register extends BaseRegister
 
         return array_merge($data, [
             'role' => 'Agency Owner',
-            'status' => 'inactive'
+            'status' => 'active'
         ]);
     }
 

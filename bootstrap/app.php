@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\RedirectToVerification::class,
             \App\Http\Middleware\CheckUserStatus::class,
         ]);
+        
+        $middleware->alias([
+            'check.subscription' => \App\Http\Middleware\CheckAgencySubscription::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

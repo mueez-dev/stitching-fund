@@ -32,7 +32,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
         'demo_expires_at',
         'email_verified_at',
         'email_verification_code',
-        'email_verification_expires_at'
+        'email_verification_expires_at',
+        'subscription_status',
+        'subscription_expires_at'
     ];
 
     protected $hidden = [
@@ -44,6 +46,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
     'demo_expires_at' => 'datetime',
     'email_verified_at' => 'datetime',
     'email_verification_expires_at' => 'datetime',
+    'subscription_expires_at' => 'datetime',
     ];
 
 
@@ -187,5 +190,12 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
                 }
             }
         });
+    }
+    
+    public function hasActiveSubscription(): bool
+    {
+        return $this->subscription_status === 'active' && 
+               $this->subscription_expires_at && 
+               $this->subscription_expires_at > now();
     }
 }

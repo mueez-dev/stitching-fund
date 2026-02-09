@@ -27,7 +27,8 @@ return new class extends Migration
             $table->timestamp('demo_expires_at')->nullable();
             $table->string('email_verification_code')->nullable();
             $table->timestamp('email_verification_expires_at')->nullable();
-
+            $table->string('subscription_status')->default('inactive')->after('demo_expires_at');
+            $table->datetime('subscription_expires_at')->nullable()->after('subscription_status');
             $table->rememberToken();
             $table->timestamps();
         });

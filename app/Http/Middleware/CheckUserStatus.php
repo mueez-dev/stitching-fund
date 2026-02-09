@@ -131,6 +131,23 @@ class CheckUserStatus
                 return redirect()->route('filament.admin.auth.login');
             }
             
+            // Check if user subscription is inactive
+            if ($user->subscription_status === 'inactive' || 
+                ($user->subscription_expires_at && $user->subscription_expires_at < now())) {
+                // Send notification using Filament's notification system
+                Notification::make()
+                    ->title('Your subscription is inactive')
+                    ->body('Please activate your subscription to access the dashboard')
+                    ->danger()
+                    ->send();
+                
+                // Logout the user
+                Auth::logout();
+                
+                // Redirect to login
+                return redirect()->route('filament.admin.auth.login');
+            }
+            
             // Check if user account has expired
             if ($user->status === 'expired') {
                 // Send notification using Filament's notification system
