@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('subscription_status')->default('inactive')->after('demo_expires_at');
-            $table->datetime('subscription_expires_at')->nullable()->after('subscription_status');
+            $table->string('password', 255)->change();
         });
     }
 
@@ -23,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['subscription_status', 'subscription_expires_at']);
+            $table->string('password')->change();
         });
     }
 };

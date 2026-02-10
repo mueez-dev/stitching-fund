@@ -6,7 +6,6 @@ use App\Models\User;
 use App\Models\UserInvitation;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\TextInput;
 use Filament\Auth\Pages\Register as BaseRegister;
@@ -217,11 +216,17 @@ class Register extends BaseRegister
         // Get the mutated data (includes invited_by and demo fields)
         $mutatedData = $this->mutateFormDataBeforeCreate($data);
         
-        // Create user manually with all fields
+        // Check if password is already hashed by Filament
+        if (strlen($data['password']) === 60 && str_starts_with($data['password'], '$2y$')) {
+            $hashedPassword = $data['password']; // Already hashed
+        } else {
+            $hashedPassword = Hash::make($data['password']); // Hash it ourselves
+        }
+        
         $user = User::create([
             'name' => $mutatedData['name'],
             'email' => $mutatedData['email'],
-            'password' => Hash::make($data['password']), // Hash password here
+            'password' => $hashedPassword,
             'role' => $mutatedData['role'],
             'status' => $mutatedData['status'] ?? 'inactive',
             'invited_by' => $mutatedData['invited_by'] ?? null,
