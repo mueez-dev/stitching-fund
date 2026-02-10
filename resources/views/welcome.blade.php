@@ -174,9 +174,11 @@
                 <h3 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                     What Our Users Say
                 </h3>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
                     Real reviews from real users managing their clothing production with ZARYQ
                 </p>
+                
+              
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -239,12 +241,50 @@
                     </div>
                 @endforelse
             </div>
+            
+            <!-- Share Experience Button -->
+            <div class="text-center mt-8">
+                <a href="{{ route('filament.admin.auth.register') }}" class="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition inline-flex items-center">
+                    <i class="fas fa-star mr-2"></i>
+                    Share Your Experience
+                </a>
+            </div>
+
+            <!-- Agencies Statistics Section -->
+            <div class="mt-16 bg-purple-50 rounded-xl p-8">
+                <div class="text-center mb-8">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">
+                        Join <span class="text-purple-600">{{ $totalAgencies }}+</span> Agency Owners
+                    </h3>
+                    <p class="text-gray-600">Trusted by successful agencies worldwide</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600 mb-1">{{ $totalAgencies }}+</div>
+                        <div class="text-sm text-gray-600">Active Agencies</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600 mb-1">100%</div>
+                        <div class="text-sm text-gray-600">Satisfaction Rate</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600 mb-1">24/7</div>
+                        <div class="text-sm text-gray-600">Support Available</div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-6">
+                    <a href="{{ route('filament.admin.auth.register') }}" 
+                       class="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-purple-700 transition text-sm">
+                        <i class="fas fa-rocket mr-2"></i>
+                        Join {{ $totalAgencies }}+ Agencies Today
+                    </a>
+                </div>
+            </div>
 
             @if($reviews->count() > 0)
-                <div class="text-center mt-12 space-x-4">
-                    <a href="{{ route('filament.admin.auth.register') }}" class="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition">
-                        Share Your Experience
-                    </a>
+                <div class="text-center mt-12">
                     @php
                         $totalReviews = \App\Models\Review::where('status', 'approved')->count();
                     @endphp

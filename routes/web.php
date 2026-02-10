@@ -12,7 +12,15 @@ use App\Http\Controllers\Demo\DemoRegisterController;
 
 
 Route::get('/', function () {
-    return view('welcome');
+    // Get active Agency Owners
+    $agencyOwners = App\Models\User::where('role', 'Agency Owner')
+                                  ->latest()
+                                  ->get(['name', 'email', 'created_at']);
+    
+    $totalAgencies = App\Models\User::where('role', 'Agency Owner')
+                                   ->count();
+    
+    return view('welcome', compact('agencyOwners', 'totalAgencies'));
 })->name('home');
 
 // Add login route alias for Filament
