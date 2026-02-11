@@ -31,15 +31,21 @@ class SecurityAlertsWidget extends StatsOverviewWidget
             // Keep default value
         }
 
-        // Pending registrations (users waiting approval)
-        $pendingRegistrations = 0;
-        try {
-            $pendingRegistrations = DB::table('users')
-                ->where('status', 'pending')    
-                ->count();
-        } catch (\Exception $e) {
-            // Keep default value
-        }
+       // Users who have registered but don't have active subscription
+        $pendingSubscription = DB::table('users')
+            ->where(function($query) {
+                $query->whereNull('subscription_status')
+                      ->orWhere('subscription_status', '!=', 'active')
+                      ->orWhere(function($subQuery) {
+                          $subQuery->where('subscription_status', 'active')
+                                   ->where(function($expQuery) {
+                                       $expQuery->whereNull('subscription_expires_at')
+                                               ->orWhere('subscription_expires_at', '<=', now());
+                                   });
+                      });
+            })
+            ->where('status', 'active')
+            ->count();
 
         return [
             Stat::make('Active Sessions', $activeSessions)
@@ -47,10 +53,10 @@ class SecurityAlertsWidget extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-finger-print')
                 ->color($activeSessions > 50 ? 'warning' : 'success'),
 
-            Stat::make('Pending Registrations', $pendingRegistrations)
-                ->description('Awaiting approval')
-                ->descriptionIcon('heroicon-m-user-plus')
-                ->color($pendingRegistrations > 0 ? 'warning' : 'success'),
+            Stat::make('Pending Registration', $pendingSubscription)
+                ->description('Users need subscription')
+                ->descriptionIcon('heroicon-m-credit-card')
+                ->color($pendingSubscription > 0 ? 'warning' : 'success'),
 
             Stat::make('Security Status', 'Monitoring')
                 ->description('Live system security')

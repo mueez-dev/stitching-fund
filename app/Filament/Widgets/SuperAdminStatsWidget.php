@@ -25,7 +25,16 @@ class SuperAdminStatsWidget extends StatsOverviewWidget
         $totalInvestors = DB::table('users')->where('role', 'Investor')->count();
         $totalAgencyOwners = DB::table('users')->where('role', 'Agency Owner')->count();
         
-          $pendingApprovals = DB::table('users')
+       
+            
+        // Inactive agencies (Agency Owners with inactive status)
+        $inactiveAgencies = DB::table('users')
+            ->where('role', 'Agency Owner')
+            ->where('status', 'inactive')
+            ->count();
+            
+        // Users awaiting approval
+        $pendingApprovals = DB::table('users')
             ->where('status', 'pending')
             ->orWhere('status', 'inactive')
             ->count();
@@ -45,10 +54,12 @@ class SuperAdminStatsWidget extends StatsOverviewWidget
                 ->description('Registered agencies')
                 ->descriptionIcon('heroicon-m-building-office')
                 ->color('warning'),
-            Stat::make('Pending Approvals', $pendingApprovals)
-                ->description('Users awaiting approval')
-                ->descriptionIcon('heroicon-m-user-plus')
-                ->color($pendingApprovals > 0 ? 'warning' : 'success'),
+         
+                
+            Stat::make('Inactive Agencies', $inactiveAgencies)
+                ->description('Agencies deactivated by admin')
+                ->descriptionIcon('heroicon-m-shield-exclamation')
+                ->color($inactiveAgencies > 0 ? 'danger' : 'success'),
         ];
     }
     
