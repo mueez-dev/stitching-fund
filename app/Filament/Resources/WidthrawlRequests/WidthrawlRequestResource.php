@@ -58,4 +58,9 @@ class WidthrawlRequestResource extends Resource
     {
         return Auth::user()->role === 'Agency Owner';
     }
+    
+    public static function shouldRegisterNavigation(): bool
+    {
+        return Auth::user()->role === 'Agency Owner';
+    }
 }

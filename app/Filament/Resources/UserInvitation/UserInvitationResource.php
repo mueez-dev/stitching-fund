@@ -34,7 +34,7 @@ class UserInvitationResource extends Resource
     public static function shouldRegisterNavigation(): bool
     {
         $user = Auth::user();
-        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+        return $user && $user->role === 'Agency Owner';
     }
 
     protected static ?string $model = UserInvitation::class;

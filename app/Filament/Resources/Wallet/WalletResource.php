@@ -46,8 +46,8 @@ class WalletResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        $user = Auth::user();
-        return $user && in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']);
+         $user = Auth::user();
+        return $user && in_array($user->role, ['Agency Owner', 'Investor']);
     }
 
     public static function getRelations(): array

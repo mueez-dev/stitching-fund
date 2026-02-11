@@ -170,8 +170,8 @@ class InvestmentPoolResource extends Resource
     public static function shouldRegisterNavigation(): bool
     {
         $user = Auth::user();
-        // Hide from navigation if we're in a LAT context
-        return $user && in_array($user->role, ['Super Admin', 'Agency Owner', 'Investor']) && !request()->has('lat_id');
+        // Hide from SuperAdmin, show to Agency Owner and Investor
+        return $user && in_array($user->role, ['Agency Owner', 'Investor']) && !request()->has('lat_id');
     }
 
     public static function getEloquentQuery(): Builder
