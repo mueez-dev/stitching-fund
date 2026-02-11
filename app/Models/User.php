@@ -166,12 +166,12 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
     
     public function agencyOwner()
     {
-        return $this->belongsTo(User::class, 'agency_owner_id');
+        return $this->belongsTo(User::class, 'invited_by');
     }
 
     public function investors()
     {
-        return $this->hasMany(User::class, 'agency_owner_id');
+        return $this->hasMany(User::class, 'invited_by');
     }
     protected static function booted()
     {

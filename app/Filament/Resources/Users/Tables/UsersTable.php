@@ -20,6 +20,9 @@ class UsersTable
     {
         return $table
             ->columns([
+                TextColumn::make('id')
+                ->searchable()
+                ->sortable(),
                 TextColumn::make('name')
                     ->searchable()
                     ->sortable(),
@@ -29,6 +32,25 @@ class UsersTable
                 TextColumn::make('role')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('invited_by')
+                    ->label('Agency ID')
+                    ->placeholder('No ID')
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('investors_count')
+                    ->label('Investors Under This Agency')
+                    ->placeholder('0')
+                    ->searchable()
+                    ->sortable()
+                    ->getStateUsing(function ($record) {
+                        try {
+                            // Use the User model relationship we defined
+                            $count = $record->investors()->count();
+                            return $count . ' Investors';
+                        } catch (\Exception $e) {
+                            return '0';
+                        }
+                    }),
                 ToggleColumn::make('status')
                     ->label('Active')
                     ->sortable()
@@ -77,8 +99,7 @@ class UsersTable
                         'agency owner' => 'Agency Owner',
                         'user' => 'User',
                     ]),
-            ])
-   
+            ])   
               
           
             ->recordActions([
