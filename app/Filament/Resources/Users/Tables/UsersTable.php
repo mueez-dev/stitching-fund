@@ -7,12 +7,15 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Tables\Filters\Filter;
-use Filament\Actions\BulkActionGroup;
+use Illuminate\Support\Facades\Auth;
+use STS\FilamentImpersonate\Actions\Impersonate;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
+
 
 class UsersTable
 {
@@ -106,6 +109,23 @@ class UsersTable
                 EditAction::make(),
                 DeleteAction::make()
                     ->visible(fn ($record) => $record?->role !== 'Super Admin'),
+                 // Custom Impersonate Action - CORRECTED
+            Impersonate::make('impersonate')
+                    ->label('Switch to User')
+                    ->icon('heroicon-o-arrow-right-circle')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Confirm Impersonation')
+                    ->modalDescription('Are you sure you want to impersonate this user? You will be able to switch back at any time.')
+                    ->modalSubmitActionLabel('Yes, Switch')
+                    ->impersonateRecord(fn($record) => $record)
+                    ->visible(fn ($record) => 
+                        Auth::user()->role === 'Super Admin' && 
+                        $record->role !== 'Super Admin' &&
+                        Auth::id() !== $record->id
+                    ),
+                    
+              
             ])
             ->poll(10);
            

@@ -198,4 +198,14 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
                $this->subscription_expires_at && 
                $this->subscription_expires_at > now();
     }
+
+    public function canImpersonate(): bool
+    {
+        return $this->role === 'Super Admin';
+    }
+
+    public function canBeImpersonated(): bool
+    {
+        return $this->role !== 'Super Admin';
+    }
 }

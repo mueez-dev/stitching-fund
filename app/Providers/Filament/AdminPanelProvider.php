@@ -26,6 +26,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Filament\Http\Middleware\Authenticate as FilamentAuthenticate;
+use STS\FilamentImpersonate\Actions\Impersonate;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -36,6 +37,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->authGuard('web')
             ->registration(Register::class)
             ->passwordReset()
             ->brandName('ZARYQ')
@@ -66,6 +68,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverResources(in: app_path('Filament/Resources/UserInvitation'), for: 'App\\Filament\\Resources\\UserInvitation')
+            ->plugins([
+                //
+            ])
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->colors([
                 'primary' => Color::Purple,
@@ -84,10 +89,6 @@ class AdminPanelProvider extends PanelProvider
                 FilamentAuthenticate::class,
                 CheckUserStatus::class,
             ], isPersistent: true)
-            ->renderHook(
-                'panels::auth.before',
-                fn (): string => '',
-            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

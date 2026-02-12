@@ -34,8 +34,8 @@ class UsersForm
                 Forms\Components\Toggle::make('status')
                     ->label('Active')
                     ->default(true)
-                    ->getStateUsing(function ($record) {
-                        return $record->status === 'active';
+                    ->formatStateUsing(function ($state) {
+                        return $state === 'active';
                     })
                     ->dehydrateStateUsing(function ($state) {
                         return $state ? 'active' : 'inactive';

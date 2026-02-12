@@ -1,15 +1,16 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Models\User;
+use Stripe\ApiOperations\All;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WalletController;
-use App\Http\Controllers\SubscriptionController;
 use App\Filament\Register\Pages\RegisterPage;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Demo\DemoRegisterController;
-
-
 
 Route::get('/', function () {
     // Get active Agency Owners
@@ -185,5 +186,16 @@ Route::get('/subscription/callback', [SubscriptionController::class, 'paymentCal
 Route::get('/subscription/status', [SubscriptionController::class, 'checkSubscription'])
     ->middleware('auth')
     ->name('subscription.status');
+
+// Impersonation routes
+Route::post('/impersonation/stop', function () {
+    \App\Services\ImpersonationService::stop();
+    return redirect('/admin/users')->with('success', 'Impersonation stopped');
+})->name('impersonation.stop')->middleware('auth');
+
+
+
+
+
 
 
