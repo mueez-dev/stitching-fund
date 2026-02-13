@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Stripe\Stripe;
 use Stripe\Checkout\Session;
 use App\Models\User;
+use App\Models\Payment;
 
 class SubscriptionController extends Controller
 {
@@ -157,7 +158,7 @@ class SubscriptionController extends Controller
             try {
                 $session = Session::retrieve($sessionId);
                 
-                if ($session->payment_status === 'paid') {
+                if ($session->payment_status === 'paid' || $session->payment_status === 'complete') {
                     // Check if this is a new user registration from session
                     $pendingEmail = session('pending_user_email');
                     $pendingName = session('pending_user_name');
@@ -178,6 +179,23 @@ class SubscriptionController extends Controller
                                 'subscription_expires_at' => Carbon::now()->addDays(30),
                                 'status' => 'active'
                             ]);
+                          
+                            // Create payment record
+                            Payment::create([
+                                'user_id' => $user->id,
+                                'charge_id' => $session->payment_intent ?? $session->id,
+                                'transaction_id' => $session->payment_intent,
+                                'amount' => 3000.00,
+                                'currency' => 'pkr',
+                                'status' => 'completed',
+                                'payment_method' => 'stripe',
+                                'metadata' => [
+                                    'plan_type' => 'Agency Owner Plan',
+                                    'subscription_duration' => '30 days',
+                                    'user_email' => $user->email,
+                                ],
+                                'stripe_response' => $session->toArray(),
+                            ]);
                             
                             Log::info('New user account created after payment', [
                                 'user_id' => $user->id,
@@ -191,10 +209,21 @@ class SubscriptionController extends Controller
                                 'subscription_expires_at' => Carbon::now()->addDays(30),
                                 'status' => 'active'
                             ]);
-                            
-                            Log::info('Existing user subscription activated after payment', [
+                            // Create payment record
+                            Payment::create([
                                 'user_id' => $user->id,
-                                'email' => $pendingEmail
+                                'charge_id' => $session->payment_intent ?? $session->id,
+                                'transaction_id' => $session->payment_intent,
+                                'amount' => 3000.00,
+                                'currency' => 'pkr',
+                                'status' => 'completed',
+                                'payment_method' => 'stripe',
+                                'metadata' => [
+                                    'plan_type' => 'Agency Owner Plan',
+                                    'subscription_duration' => '30 days',
+                                    'user_email' => $user->email,
+                                ],
+                                'stripe_response' => $session->toArray(),
                             ]);
                         }
                         
@@ -212,6 +241,23 @@ class SubscriptionController extends Controller
                                 'subscription_expires_at' => Carbon::now()->addDays(30)
                             ]);
                             
+                            // Create payment record
+                            Payment::create([
+                                'user_id' => $user->id,
+                                'charge_id' => $session->payment_intent ?? $session->id,
+                                'transaction_id' => $session->payment_intent,
+                                'amount' => 3000.00,
+                                'currency' => 'pkr',
+                                'status' => 'completed',
+                                'payment_method' => 'stripe',
+                                'metadata' => [
+                                    'plan_type' => 'Agency Owner Plan',
+                                    'subscription_duration' => '30 days',
+                                    'user_email' => $user->email,
+                                ],
+                                'stripe_response' => $session->toArray(),
+                            ]);
+                            
                             return redirect()->route('filament.admin.pages.dashboard')
                                 ->with('success', 'Subscription activated successfully!');
                         }
@@ -220,7 +266,14 @@ class SubscriptionController extends Controller
             } catch (\Exception $e) {
                 Log::error('Stripe callback error', [
                     'error' => $e->getMessage(),
-                    'session_id' => $sessionId
+                    'session_id' => $sessionId,
+                    'payment_status' => $session->payment_status ?? 'unknown'
+                ]);
+                
+                // Debug: Log session data for troubleshooting
+                Log::info('Stripe session data', [
+                    'session_id' => $sessionId,
+                    'session' => $session->toArray()
                 ]);
             }
         }

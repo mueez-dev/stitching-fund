@@ -11,6 +11,8 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Demo\DemoRegisterController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\StripeController;
 
 Route::get('/', function () {
     // Get active Agency Owners
@@ -48,8 +50,6 @@ Route::get('/wallet/pool-data', [WalletController::class, 'getPoolData'])
 Route::get('/investor/available-pools', [WalletController::class, 'getAvailablePools'])
     ->middleware('auth')
     ->name('investor.available-pools');
-
-   
 
 Route::get('/demo/register', [DemoRegisterController::class, 'show'])
     ->name('demo.register');
