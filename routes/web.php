@@ -175,7 +175,8 @@ Route::get('/api/all-reviews', function () {
 
 // Subscription routes for Agency Owners
 Route::get('/subscription', [SubscriptionController::class, 'showSubscriptionPage'])
-    ->name('subscription.show');
+    ->name('subscription.show')
+    ->middleware('web');
 
 Route::post('/subscription/pay', [SubscriptionController::class, 'processPayment'])
     ->name('subscription.pay');

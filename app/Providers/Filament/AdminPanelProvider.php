@@ -16,6 +16,7 @@ use App\Filament\Widgets\SuperAdminStatsWidget;
 use App\Filament\Widgets\InvestorStatsWidget;
 use App\Filament\Widgets\AgencyOwnerStatsWidget;
 use App\Filament\Widgets\InvestmentPerformanceWidget;
+use App\Filament\Widgets\SubscriptionTimerWidget;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Routing\Middleware\SubstituteBindings;
@@ -77,6 +78,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+               SubscriptionTimerWidget::class,
                SuperAdminStatsWidget::class,
                 SystemHealthWidget::class,
                SecurityAlertsWidget::class,
