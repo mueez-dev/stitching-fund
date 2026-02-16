@@ -64,7 +64,7 @@ class Register extends BaseRegister
                 'role' => 'Agency Owner',
                 'status' => 'active',
                 'is_demo' => true,
-                'demo_expires_at' => now()->addDays(3)
+                'demo_expires_at' => now()->addDays(7)
             ]);
         } else {
             // Direct registration for Agency Owner

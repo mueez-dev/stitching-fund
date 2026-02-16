@@ -16,6 +16,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
+use App\Enums\SubscriptionStatus;
+use Carbon\Carbon;
 
 class User extends Authenticatable implements FilamentUser, MustVerifyEmailContract
 {
@@ -47,6 +49,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
     'email_verified_at' => 'datetime',
     'email_verification_expires_at' => 'datetime',
     'subscription_expires_at' => 'datetime',
+    'subscription_status' => SubscriptionStatus::class,
     ];
 
 
@@ -207,5 +210,86 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
     public function canBeImpersonated(): bool
     {
         return $this->role !== 'Super Admin';
+    }
+    
+    /**
+     * Get subscription state (calculated, not stored)
+     */
+    public function getSubscriptionState(): string
+    {
+        // Skip for demo users
+        if ($this->is_demo) {
+            return 'active';
+        }
+        
+        // Skip if no subscription expiry set
+        if (!$this->subscription_expires_at) {
+            return 'active';
+        }
+        
+        $now = now();
+        $expiresAt = $this->subscription_expires_at;
+        $graceEndsAt = $expiresAt->copy()->addDays(3);
+        
+        // Active: subscription not expired
+        if ($now->lt($expiresAt)) {
+            // Check if expiring within 7 days
+            if ($now->diffInDays($expiresAt) <= 7) {
+                return 'expiring';
+            }
+            return 'active';
+        }
+        
+        // Expired Grace: within 3 days after expiry
+        if ($now->between($expiresAt, $graceEndsAt)) {
+            return 'expired_grace';
+        }
+        
+        // Locked: after grace period
+        return 'locked';
+    }
+    
+    /**
+     * Get grace period end date
+     */
+    public function getGraceEndsAt(): ?Carbon
+    {
+        if (!$this->subscription_expires_at) {
+            return null;
+        }
+        
+        return $this->subscription_expires_at->copy()->addDays(3);
+    }
+    
+    /**
+     * Check if user is in grace period
+     */
+    public function isInGracePeriod(): bool
+    {
+        return $this->getSubscriptionState() === 'expired_grace';
+    }
+    
+    /**
+     * Check if user is locked (after grace period)
+     */
+    public function isLocked(): bool
+    {
+        return $this->getSubscriptionState() === 'locked';
+    }
+    
+    /**
+     * Check if user can access features (not locked)
+     */
+    public function canAccessFeatures(): bool
+    {
+        return !in_array($this->getSubscriptionState(), ['locked']);
+    }
+    
+    /**
+     * Check if user has read-only access
+     */
+    public function hasReadOnlyAccess(): bool
+    {
+        return $this->getSubscriptionState() === 'expired_grace';
     }
 }

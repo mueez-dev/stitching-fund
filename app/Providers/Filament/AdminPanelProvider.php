@@ -10,15 +10,17 @@ use Filament\Support\Colors\Color;
 use App\Filament\Pages\Auth\Register;
 use App\Http\Middleware\CheckUserStatus;
 use App\Filament\Widgets\SystemHealthWidget;
+use App\Filament\Widgets\InvestorStatsWidget;
 use App\Filament\Widgets\InvestmentPoolWidget;
 use App\Filament\Widgets\SecurityAlertsWidget;
 use App\Filament\Widgets\SuperAdminStatsWidget;
-use App\Filament\Widgets\InvestorStatsWidget;
-use App\Filament\Widgets\AgencyOwnerStatsWidget;
-use App\Filament\Widgets\InvestmentPerformanceWidget;
-use App\Filament\Widgets\SubscriptionTimerWidget;
 use Illuminate\Session\Middleware\StartSession;
+use App\Filament\Widgets\AgencyOwnerStatsWidget;
 use Illuminate\Cookie\Middleware\EncryptCookies;
+use STS\FilamentImpersonate\Actions\Impersonate;
+use App\Filament\Widgets\SubscriptionTimerWidget;
+use App\Filament\Widgets\SubscriptionBannerWidget;
+use App\Filament\Widgets\InvestmentPerformanceWidget;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
@@ -27,7 +29,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Filament\Http\Middleware\Authenticate as FilamentAuthenticate;
-use STS\FilamentImpersonate\Actions\Impersonate;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -64,6 +65,10 @@ class AdminPanelProvider extends PanelProvider
                     </style>
                 ',
             )
+            ->renderHook(
+                'panels::body.start',
+                fn (): string => \Illuminate\Support\Facades\Blade::render('@livewire("subscription-modal")'),
+            )
             ->pages([
                 \Filament\Pages\Dashboard::class,
             ])
@@ -78,14 +83,15 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-               SubscriptionTimerWidget::class,
-               SuperAdminStatsWidget::class,
-                SystemHealthWidget::class,
-               SecurityAlertsWidget::class,
-               InvestorStatsWidget::class,
-               AgencyOwnerStatsWidget::class,
-               InvestmentPerformanceWidget::class,
-               InvestmentPoolWidget::class,
+                // Temporarily disabled all widgets
+                // SubscriptionTimerWidget::class,
+                // SuperAdminStatsWidget::class,
+                // SystemHealthWidget::class,
+                // SecurityAlertsWidget::class,
+                // InvestorStatsWidget::class,
+                // AgencyOwnerStatsWidget::class,
+                // InvestmentPerformanceWidget::class,
+                // InvestmentPoolWidget::class,
             ])
             ->authMiddleware([
                 FilamentAuthenticate::class,
@@ -101,6 +107,7 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+               
             ]);
     }
 }

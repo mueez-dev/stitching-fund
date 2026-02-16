@@ -51,7 +51,6 @@ class CheckUserStatus
                     ->title('⚠️ Important - Demo Account Warning!')
                     ->body('Please do not add real data in your trial account. The trial is only for checking system functionality. When your trial expires, all your data will be deleted.')
                     ->warning()
-                    ->persistent()
                     ->sendToDatabase($user);
                 session()->put('demo_warning_sent', true);
             }
@@ -131,21 +130,59 @@ class CheckUserStatus
                 return redirect()->route('filament.admin.auth.login');
             }
             
-            // Check if user subscription is inactive
-            if ($user->subscription_status === 'inactive' || 
-                ($user->subscription_expires_at && $user->subscription_expires_at < now())) {
-                // Send notification using Filament's notification system
-                Notification::make()
-                    ->title('Your subscription is inactive')
-                    ->body('Please activate your subscription to access the dashboard')
-                    ->danger()
-                    ->send();
-                
-                // Logout the user
-                Auth::logout();
-                
-                // Redirect to login
-                return redirect()->route('filament.admin.auth.login');
+            // Check subscription state and enforce access rules
+            $subscriptionState = $user->getSubscriptionState();
+            
+            // Allow billing page always accessible
+            if ($request->is('admin/billing') || $request->is('admin/billing/*')) {
+                return $next($request);
+            }
+            
+            // Handle different subscription states
+            switch ($subscriptionState) {
+                case 'locked':
+                    // Only allow dashboard and billing pages
+                    if (!$request->is('admin') && !$request->is('admin/')) {
+                        // Send locked notification
+                        if (!session()->has('locked_notification_sent')) {
+                            Notification::make()
+                                ->title('Account Locked')
+                                ->body('Your subscription has expired. Please renew your subscription to access all features.')
+                                ->danger()
+                                ->send();
+                            session()->put('locked_notification_sent', true);
+                        }
+                        
+                        // Redirect to dashboard
+                        return redirect()->route('filament.admin.pages.dashboard');
+                    }
+                    break;
+                    
+                case 'expired_grace':
+                    // Read-only mode - allow access but show warning
+                    if (!session()->has('grace_notification_sent')) {
+                        $daysLeft = (int) $user->getGraceEndsAt()->diffInDays(now());
+                        Notification::make()
+                            ->title('Subscription Expired - Grace Period')
+                            ->body('Your subscription has expired. You have ' . $daysLeft . ' days left in grace period. Please renew to continue using all features.')
+                            ->warning()
+                            ->send();
+                        session()->put('grace_notification_sent', true);
+                    }
+                    break;
+                    
+                case 'expiring':
+                    // Show expiring warning
+                    if (!session()->has('expiring_notification_sent')) {
+                        $daysLeft = (int) $user->subscription_expires_at->diffInDays(now());
+                        Notification::make()
+                            ->title('Subscription Expiring Soon')
+                            ->body('Your subscription will expire in ' . $daysLeft . ' day(s). Please renew to avoid interruption.')
+                            ->warning()
+                            ->send();
+                        session()->put('expiring_notification_sent', true);
+                    }
+                    break;
             }
             
             // Check if user account has expired
