@@ -32,9 +32,7 @@ class InvestmentPoolResource extends Resource
     protected static ?string $model = InvestmentPool::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Banknotes;
-
-    protected static string|UnitEnum|null $navigationGroup = 'Investment Management';
-
+  
     public static function form(Schema $schema): Schema
     {
         $schema = InvestmentPoolForm::configure($schema);
@@ -167,11 +165,34 @@ class InvestmentPoolResource extends Resource
         return false;
     }
 
+    public static function getNavigationItems(): array
+{
+    $isGrace = Auth::user()?->getSubscriptionState() === 'expired_grace';
+
+    if (!$isGrace) {
+        return parent::getNavigationItems();
+    }
+
+    return [
+        \Filament\Navigation\NavigationItem::make(static::getNavigationLabel())
+            ->icon(static::$navigationIcon)
+            ->url("javascript: window.dispatchEvent(new CustomEvent('grace-locked'))")
+            ->sort(static::getNavigationSort())
+            ->badge('🔒'),
+    ];
+}
+
     public static function shouldRegisterNavigation(): bool
     {
         $user = Auth::user();
+        
         // Hide from SuperAdmin, show to Agency Owner and Investor
-        return $user && in_array($user->role, ['Agency Owner', 'Investor']) && !request()->has('lat_id');
+        if (!$user || !in_array($user->role, ['Agency Owner', 'Investor']) || request()->has('lat_id')) {
+            return false;
+        }
+        
+        // Always show navigation, even during grace period (but with lock icon)
+        return true;
     }
 
     public static function getEloquentQuery(): Builder

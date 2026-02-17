@@ -25,9 +25,7 @@ class WalletResource extends Resource
 {
     protected static ?string $model = Wallet::class;
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-credit-card';
-    
-    protected static string|UnitEnum|null $navigationGroup = 'Investment Management';
-
+   
     public static function form(Schema $schema): Schema
     {
         return $schema->schema(WalletForm::schema());
@@ -68,11 +66,6 @@ class WalletResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Wallet';
-    }
-
-    public static function getNavigationIcon(): string
-    {
-        return 'heroicon-o-credit-card';
     }
 
     public static function getEloquentQuery(): Builder
@@ -157,5 +150,21 @@ class WalletResource extends Resource
         
         return false;
     }
+   public static function getNavigationItems(): array
+{
+    $isGrace = Auth::user()?->getSubscriptionState() === 'expired_grace';
+
+    if (!$isGrace) {
+        return parent::getNavigationItems();
+    }
+
+    return [
+        \Filament\Navigation\NavigationItem::make(static::getNavigationLabel())
+            ->icon(static::$navigationIcon)
+            ->url("javascript: window.dispatchEvent(new CustomEvent('grace-locked'))")
+            ->sort(static::getNavigationSort())
+            ->badge('🔒'),
+    ];
+}
    
 }

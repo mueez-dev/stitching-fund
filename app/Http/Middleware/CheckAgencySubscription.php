@@ -20,24 +20,18 @@ class CheckAgencySubscription
         
         // Only check subscription for Agency Owners
         if ($user && $user->role === 'Agency Owner') {
-            // Check if user has active subscription
-            if (!$this->hasActiveSubscription($user)) {
-                // Redirect to subscription page
-                return redirect()->route('subscription.show')
-                    ->with('warning', 'You need an active subscription to access this feature.');
+            // Check if user can access features (not locked)
+            if (!$user->canAccessFeatures()) {
+                // Allow access to subscription page and logout
+                $allowedRoutes = ['subscription.show', 'filament.admin.auth.logout', 'filament.admin.auth.login'];
+                
+                if (!in_array($request->route()->getName(), $allowedRoutes)) {
+                    return redirect()->route('subscription.show')
+                        ->with('warning', 'Your subscription has expired. Please renew to access this feature.');
+                }
             }
         }
         
         return $next($request);
-    }
-    
-    /**
-     * Check if user has active subscription
-     */
-    private function hasActiveSubscription($user): bool
-    {
-        return $user->subscription_status === 'active' && 
-               $user->subscription_expires_at && 
-               $user->subscription_expires_at > now();
     }
 }

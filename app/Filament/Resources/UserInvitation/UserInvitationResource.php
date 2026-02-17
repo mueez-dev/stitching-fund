@@ -31,9 +31,22 @@ class UserInvitationResource extends Resource
         return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
     }
 
+    public static function getNavigationUrl(): string
+    {
+        return Auth::user()?->getSubscriptionState() === 'expired_grace'
+            ? '#'                          // Click hoga, page nahi khulay ga
+            : parent::getNavigationUrl();  // Normal URL
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         $user = Auth::user();
+        
+        if (!$user) {
+            return false;
+        }
+        
+        // Always show navigation, even during grace period (but with lock icon)
         return $user && $user->role === 'Agency Owner';
     }
 
@@ -46,7 +59,23 @@ class UserInvitationResource extends Resource
     protected static ?string $modelLabel = 'Investor Invitation';
 
     protected static ?string $pluralModelLabel = 'Investor Invitations';
+  public static function getNavigationItems(): array
+{
+    $isGrace = Auth::user()?->getSubscriptionState() === 'expired_grace';
 
+    if (!$isGrace) {
+        return parent::getNavigationItems();
+    }
+
+    return [
+        \Filament\Navigation\NavigationItem::make(static::getNavigationLabel())
+            ->icon(static::$navigationIcon)
+            ->url("javascript: window.dispatchEvent(new CustomEvent('grace-locked'))")
+            ->sort(static::getNavigationSort())
+            ->group(static::getNavigationGroup())
+            ->badge('🔒'),
+    ];
+}
     
     public static function canCreate(): bool
     {

@@ -211,85 +211,49 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
     {
         return $this->role !== 'Super Admin';
     }
-    
-    /**
-     * Get subscription state (calculated, not stored)
-     */
+
     public function getSubscriptionState(): string
     {
         // Skip for demo users
         if ($this->is_demo) {
             return 'active';
         }
-        
-        // Skip if no subscription expiry set
+
+        // If no subscription at all
         if (!$this->subscription_expires_at) {
-            return 'active';
+            return 'locked';
         }
-        
-        $now = now();
-        $expiresAt = $this->subscription_expires_at;
-        $graceEndsAt = $expiresAt->copy()->addDays(3);
-        
-        // Active: subscription not expired
-        if ($now->lt($expiresAt)) {
-            // Check if expiring within 7 days
-            if ($now->diffInDays($expiresAt) <= 7) {
-                return 'expiring';
-            }
-            return 'active';
-        }
-        
-        // Expired Grace: within 3 days after expiry
-        if ($now->between($expiresAt, $graceEndsAt)) {
+
+        // If subscription is expired
+        if ($this->subscription_expires_at->isPast()) {
+            // For now, treat expired as grace period (you can adjust this logic)
             return 'expired_grace';
         }
-        
-        // Locked: after grace period
-        return 'locked';
+
+        // If subscription is expiring soon (e.g., within 7 days)
+        if ($this->subscription_expires_at->diffInDays(now()) <= 7) {
+            return 'expiring';
+        }
+
+        return 'active';
     }
-    
-    /**
-     * Get grace period end date
-     */
+
     public function getGraceEndsAt(): ?Carbon
     {
-        if (!$this->subscription_expires_at) {
-            return null;
+        // Return a default grace period end date (7 days from now) when in grace period
+        if ($this->getSubscriptionState() === 'expired_grace') {
+            return now()->addDays(7);
         }
-        
-        return $this->subscription_expires_at->copy()->addDays(3);
+        return null;
     }
-    
-    /**
-     * Check if user is in grace period
-     */
+
     public function isInGracePeriod(): bool
     {
         return $this->getSubscriptionState() === 'expired_grace';
     }
-    
-    /**
-     * Check if user is locked (after grace period)
-     */
+
     public function isLocked(): bool
     {
         return $this->getSubscriptionState() === 'locked';
-    }
-    
-    /**
-     * Check if user can access features (not locked)
-     */
-    public function canAccessFeatures(): bool
-    {
-        return !in_array($this->getSubscriptionState(), ['locked']);
-    }
-    
-    /**
-     * Check if user has read-only access
-     */
-    public function hasReadOnlyAccess(): bool
-    {
-        return $this->getSubscriptionState() === 'expired_grace';
     }
 }

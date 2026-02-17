@@ -17,6 +17,8 @@ use App\Filament\Widgets\SuperAdminStatsWidget;
 use Illuminate\Session\Middleware\StartSession;
 use App\Filament\Widgets\AgencyOwnerStatsWidget;
 use Illuminate\Cookie\Middleware\EncryptCookies;
+use Filament\View\PanelsRenderHook;
+
 use STS\FilamentImpersonate\Actions\Impersonate;
 use App\Filament\Widgets\SubscriptionTimerWidget;
 use App\Filament\Widgets\SubscriptionBannerWidget;
@@ -68,6 +70,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::body.start',
                 fn (): string => \Illuminate\Support\Facades\Blade::render('@livewire("subscription-modal")'),
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn () => view('filament.components.grace-listener')
             )
             ->pages([
                 \Filament\Pages\Dashboard::class,

@@ -22,6 +22,7 @@ class WidthrawlRequestResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
+   
     protected static ?string $recordTitleAttribute = 'investor_name';
     
     protected static string|UnitEnum|null $navigationGroup = 'Wallet Management';
@@ -56,11 +57,36 @@ class WidthrawlRequestResource extends Resource
     
     public static function canViewAny(): bool
     {
-        return Auth::user()->role === 'Agency Owner';
+        $user = Auth::user();
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
     }
     
+    public static function getNavigationItems(): array
+{
+    $isGrace = Auth::user()?->getSubscriptionState() === 'expired_grace';
+
+    if (!$isGrace) {
+        return parent::getNavigationItems();
+    }
+
+    return [
+        \Filament\Navigation\NavigationItem::make(static::getNavigationLabel())
+            ->icon(static::$navigationIcon)
+            ->url("javascript: window.dispatchEvent(new CustomEvent('grace-locked'))")
+            ->sort(static::getNavigationSort())
+            ->badge('🔒'),
+    ];
+}
+
     public static function shouldRegisterNavigation(): bool
     {
-        return Auth::user()->role === 'Agency Owner';
+        $user = Auth::user();
+        
+        if (!$user) {
+            return false;
+        }
+        
+        // Always show navigation, even during grace period (but with lock icon)
+        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
     }
 }
