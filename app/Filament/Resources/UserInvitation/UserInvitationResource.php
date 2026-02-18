@@ -60,22 +60,38 @@ class UserInvitationResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Investor Invitations';
   public static function getNavigationItems(): array
-{
-    $isGrace = Auth::user()?->getSubscriptionState() === 'expired_grace';
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $subscriptionState = $user?->getSubscriptionState();
+        
+        // For locked period, only show dashboard and billing
+        if ($subscriptionState === 'locked') {
+            return [
+                \Filament\Navigation\NavigationItem::make(static::getNavigationLabel())
+                    ->icon(static::$navigationIcon)
+                    ->url("javascript: window.dispatchEvent(new CustomEvent('account-locked'))")
+                    ->sort(static::getNavigationSort())
+                    ->badge('🔒'),
 
-    if (!$isGrace) {
+               
+            ];
+        }
+        
+        // For grace period, show grace locked message
+        if ($subscriptionState === 'expired_grace') {
+            return [
+                \Filament\Navigation\NavigationItem::make(static::getNavigationLabel())
+                    ->icon(static::$navigationIcon)
+                    ->url("javascript: window.dispatchEvent(new CustomEvent('grace-locked'))")
+                    ->sort(static::getNavigationSort())
+                    ->badge('🔒'),
+            ];
+        }
+
+        // Normal access - show all navigation items
         return parent::getNavigationItems();
     }
-
-    return [
-        \Filament\Navigation\NavigationItem::make(static::getNavigationLabel())
-            ->icon(static::$navigationIcon)
-            ->url("javascript: window.dispatchEvent(new CustomEvent('grace-locked'))")
-            ->sort(static::getNavigationSort())
-            ->group(static::getNavigationGroup())
-            ->badge('🔒'),
-    ];
-}
     
     public static function canCreate(): bool
     {

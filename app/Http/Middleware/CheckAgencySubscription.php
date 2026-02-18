@@ -21,14 +21,33 @@ class CheckAgencySubscription
         // Only check subscription for Agency Owners
         if ($user && $user->role === 'Agency Owner') {
             // Check if user can access features (not locked)
-            if (!$user->canAccessFeatures()) {
-                // Allow access to subscription page and logout
-                $allowedRoutes = ['subscription.show', 'filament.admin.auth.logout', 'filament.admin.auth.login'];
+            $subscriptionState = $user->getSubscriptionState();
+            if ($subscriptionState === 'locked') {
+                // Allow access to subscription page, logout, dashboard, and root route
+                $allowedRoutes = [
+                    'subscription.show', 
+                    'filament.admin.auth.logout', 
+                    'filament.admin.auth.login', 
+                    'filament.admin.pages.dashboard',
+                    'home'
+                ];
                 
-                if (!in_array($request->route()->getName(), $allowedRoutes)) {
-                    return redirect()->route('subscription.show')
-                        ->with('warning', 'Your subscription has expired. Please renew to access this feature.');
+                // Get current route name safely
+                $currentRoute = $request->route();
+                $routeName = $currentRoute ? $currentRoute->getName() : null;
+                
+                // Also allow access to the root path (/) and billing page
+                $currentPath = $request->path();
+                $allowedPaths = ['/', 'admin/billing'];
+                
+                // If route is allowed by name or path, continue
+                if (($routeName && in_array($routeName, $allowedRoutes)) || in_array($currentPath, $allowedPaths)) {
+                    return $next($request);
                 }
+                
+                // Otherwise redirect to billing
+                return redirect()->to('/admin/billing')
+                    ->with('warning', 'Your subscription has expired. Please renew to access this feature.');
             }
         }
         

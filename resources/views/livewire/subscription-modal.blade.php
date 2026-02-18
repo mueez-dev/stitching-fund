@@ -24,9 +24,9 @@
                 {{ $expiresAt->format('d-m-Y H:i') }}
             </strong>
         @elseif($state === 'expired_grace')
-            Grace period ends at
+            Grace period ends in
             <strong>
-                {{ $graceEndsAt->format('d-m-Y H:i') }}
+                {{ $timeRemaining }}
             </strong>
         @endif
     </x-slot>
@@ -44,7 +44,7 @@
             <p class="text-gray-600">
                 Your subscription has expired.
                 You are in grace period with
-                <strong>{{ $daysLeft }} day(s)</strong> remaining.
+                <strong>{{ $timeRemaining }}</strong> remaining.
             </p>
 
         @elseif($state === 'locked')
@@ -56,33 +56,36 @@
     </div>
 
     {{-- FOOTER --}}
-    <x-slot name="footer">
-        <div class="flex justify-center gap-3 w-full">
-            @if($state !== 'locked')
-                <x-filament::button
-                    color="gray"
-                    wire:click="$dispatch('close-modal', { id: 'subscription-modal' })"
-                >
-                    Close
-                </x-filament::button>
-            @endif
-
+  <x-slot name="footer">
+    <div class="flex justify-center gap-3 w-full">
+        @if($state !== 'locked')
             <x-filament::button
-                color="primary"
-                wire:click="renew"
+                color="gray"
+                wire:click="close"
             >
-                {{ $state === 'expiring' ? 'Update Now' : 'Renew Now' }}
+                Close
             </x-filament::button>
-        </div>
-    </x-slot>
+        @endif
+        <x-filament::button
+            color="primary"
+            wire:click="renew"
+        >
+            {{ $state === 'expiring' ? 'Update Now' : ($state === 'locked' ? 'Unlock Account' : 'Renew Now') }}
+        </x-filament::button>
+    </div>
+</x-slot>
 
 </x-filament::modal>
 
-{{-- SHOW EVERY 5 MINUTES FOR GRACE PERIOD --}}
-@if($state === 'expired_grace')
+
+{{-- 5 MINUTE INTERVAL - GRACE PERIOD AUR LOCKED DONO KE LIYE --}}
+@if($state === 'expired_grace' || $state === 'locked')
 <script>
-    setInterval(() => {
-        Livewire.dispatch('open-modal', { id: 'subscription-modal' });
-    }, 300000); // 5 minutes = 300000ms
+    document.addEventListener('DOMContentLoaded', function() {
+        setInterval(() => {
+            Livewire.dispatch('open-modal', { id: 'subscription-modal' });
+        }, 300000); // 5 minute = 300000ms
+    });
 </script>
 @endif
+

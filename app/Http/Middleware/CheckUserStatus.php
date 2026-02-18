@@ -16,6 +16,10 @@ class CheckUserStatus
 
     public function handle(Request $request, Closure $next): Response
     {
+         if ($request->is('livewire/update') || $request->is('livewire/*')) {
+        return $next($request);
+    }
+    
         if (
             $request->is('admin/login') ||
             $request->is('admin/register') ||
@@ -64,15 +68,19 @@ class CheckUserStatus
 
         switch ($state) {
 
-            case 'locked':
-                if (!$request->routeIs('filament.admin.pages.billing') && !$request->is('admin/billing*')) {
-                    if (!session()->has('locked_notification_sent')) {
-                        Notification::make()->title('Account Locked')->body('Your subscription has expired. Please renew to continue.')->danger()->send();
-                        session()->put('locked_notification_sent', true);
-                    }
-                    return $this->safeRedirect('filament.admin.pages.billing');
-                }
-                break;
+           case 'locked':
+    if (!$request->routeIs('filament.admin.pages.billing') && 
+        !$request->is('admin/billing*') &&
+        !$request->is('admin') &&           // ← Dashboard allow
+        !$request->routeIs('filament.admin.pages.dashboard')) {  // ← Dashboard route allow
+        
+        if (!session()->has('locked_notification_sent')) {
+            Notification::make()->title('Account Locked')->body('Your subscription has expired. Please renew to continue.')->danger()->send();
+            session()->put('locked_notification_sent', true);
+        }
+        return $this->safeRedirect('filament.admin.pages.billing');
+    }
+    break;
 
             case 'expired_grace':
                 // Let JavaScript handle all notifications - no middleware interference

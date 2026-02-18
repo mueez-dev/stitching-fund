@@ -71,6 +71,25 @@ class ContactsResource extends Resource
         ];
     }
 
+    public static function getNavigationItems(): array
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $subscriptionState = $user?->getSubscriptionState();
+
+        if ($subscriptionState === 'locked') {
+            return [
+                \Filament\Navigation\NavigationItem::make(static::getNavigationLabel())
+                    ->icon(static::$navigationIcon)
+                    ->url("javascript: window.dispatchEvent(new CustomEvent('account-locked'))")
+                    ->sort(static::getNavigationSort())
+                    ->badge('🔒'),
+            ];
+        }
+
+        return parent::getNavigationItems();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ContactsForm::configure($schema);

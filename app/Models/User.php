@@ -219,19 +219,26 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
             return 'active';
         }
 
-        // If no subscription at all
+        // If no subscription expiry date at all
         if (!$this->subscription_expires_at) {
             return 'locked';
         }
 
-        // If subscription is expired
-        if ($this->subscription_expires_at->isPast()) {
-            // For now, treat expired as grace period (you can adjust this logic)
+        $expiryDate = $this->subscription_expires_at;
+        $graceEndDate = $expiryDate->copy()->addHours(72); // 72 hours = 3 days grace period
+        
+        // Check if grace period is complete (locked period)
+        if (now()->isAfter($graceEndDate)) {
+            return 'locked';
+        }
+        
+        // Check if subscription is expired but within grace period
+        if ($expiryDate->isPast()) {
             return 'expired_grace';
         }
 
         // If subscription is expiring soon (e.g., within 7 days)
-        if ($this->subscription_expires_at->diffInDays(now()) <= 7) {
+        if ($expiryDate->diffInDays(now()) <= 7) {
             return 'expiring';
         }
 
@@ -240,9 +247,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
 
     public function getGraceEndsAt(): ?Carbon
     {
-        // Return a default grace period end date (7 days from now) when in grace period
-        if ($this->getSubscriptionState() === 'expired_grace') {
-            return now()->addDays(7);
+        // Return actual grace period end date based on subscription expiry (72 hours)
+        if ($this->subscription_expires_at && $this->getSubscriptionState() === 'expired_grace') {
+            return $this->subscription_expires_at->copy()->addHours(72);
         }
         return null;
     }
@@ -255,5 +262,72 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
     public function isLocked(): bool
     {
         return $this->getSubscriptionState() === 'locked';
+    }
+
+    public function getGraceTimeRemaining(): array
+    {
+        if ($this->getSubscriptionState() !== 'expired_grace') {
+            return [
+                'days' => 0, 'hours' => 0, 'minutes' => 0,
+                'total_hours' => 0, 'total_minutes' => 0,
+                'formatted' => '0h 0m', 'ui_format' => '0 days 0 hours'
+            ];
+        }
+
+        $graceEndsAt = $this->getGraceEndsAt();
+        if (!$graceEndsAt) {
+            return [
+                'days' => 0, 'hours' => 0, 'minutes' => 0,
+                'total_hours' => 0, 'total_minutes' => 0,
+                'formatted' => '0h 0m', 'ui_format' => '0 days 0 hours'
+            ];
+        }
+
+        $remaining = now()->diff($graceEndsAt);
+        $totalHours = $remaining->h + ($remaining->days * 24);
+        $totalMinutes = $totalHours * 60 + $remaining->i;
+        
+        return [
+            'days' => $remaining->d,
+            'hours' => $remaining->h,
+            'minutes' => $remaining->i,
+            'total_hours' => $totalHours,
+            'total_minutes' => $totalMinutes,
+            'formatted' => $remaining->format('%H:%I:%S'),
+            'ui_format' => $this->formatGraceTimeForUI($remaining->d, $remaining->h, $remaining->i),
+            'short_format' => $this->formatGraceTimeShort($remaining->d, $remaining->h, $remaining->i)
+        ];
+    }
+
+    private function formatGraceTimeForUI(int $days, int $hours, int $minutes): string
+    {
+        $parts = [];
+        
+        if ($days > 0) {
+            $parts[] = "{$days} day" . ($days > 1 ? 's' : '');
+        }
+        
+        if ($hours > 0) {
+            $parts[] = "{$hours} hour" . ($hours > 1 ? 's' : '');
+        }
+        
+        if ($minutes > 0 && count($parts) < 2) {
+            $parts[] = "{$minutes} minute" . ($minutes > 1 ? 's' : '');
+        }
+        
+        return empty($parts) ? 'Less than 1 minute' : implode(' ', $parts);
+    }
+
+    private function formatGraceTimeShort(int $days, int $hours, int $minutes): string
+    {
+        if ($days > 0) {
+            return "{$days}d {$hours}h";
+        }
+        
+        if ($hours > 0) {
+            return "{$hours}h {$minutes}m";
+        }
+        
+        return "{$minutes}m";
     }
 }
