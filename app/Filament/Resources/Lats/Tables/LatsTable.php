@@ -12,11 +12,14 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms\Components\TextInput;
+use Illuminate\Support\Facades\Auth;
 
 class LatsTable
 {
     public static function configure(Table $table): Table
     {
+        $isGrace = Auth::check() && Auth::user()?->getSubscriptionState() === 'expired_grace';
+
         return $table
             ->query(Lat::with(['materials', 'expenses','summary'])->forUser())
             ->columns([
@@ -67,12 +70,15 @@ class LatsTable
                     })
             ])
             ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->disabled($isGrace),
+                DeleteAction::make()
+                    ->disabled($isGrace),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->disabled($isGrace),
                 ]),
             ]);
     }

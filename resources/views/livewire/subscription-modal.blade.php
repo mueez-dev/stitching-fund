@@ -78,11 +78,11 @@
 
 </x-filament::modal>
 
-{{-- REOPEN EVERY 3 MINUTES AFTER EXPIRY --}}
+{{-- SHOW EVERY 5 MINUTES FOR GRACE PERIOD --}}
 @if($state === 'expired_grace')
 <script>
     setInterval(() => {
         Livewire.dispatch('open-modal', { id: 'subscription-modal' });
-    }, 180000);
+    }, 300000); // 5 minutes = 300000ms
 </script>
 @endif

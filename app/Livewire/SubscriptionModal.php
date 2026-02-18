@@ -22,6 +22,11 @@ class SubscriptionModal extends Component
             return;
         }
 
+        // Don't show subscription modal to Super Admin
+        if ($user->role === 'Super Admin') {
+            return;
+        }
+
         $this->expiresAt = $user->subscription_expires_at;
         $this->graceEndsAt = $user->subscription_expires_at->addDays(3);
 
@@ -29,13 +34,23 @@ class SubscriptionModal extends Component
 
         if ($this->state === 'expiring') {
             $this->daysLeft = (int) now()->diffInDays($this->expiresAt);
+            
+            // Only show once per login session for expiring period
+            if (!Session::has('expiring_popup_shown')) {
+                Session::put('expiring_popup_shown', true);
+                $this->dispatch('open-modal', id: 'subscription-modal');
+            }
         }
 
         if ($this->state === 'expired_grace') {
             $this->daysLeft = max(0, (int) now()->diffInDays($this->graceEndsAt));
+            
+            // Only show on login for grace period, not on page reload
+            if (!Session::has('grace_popup_login_shown')) {
+                Session::put('grace_popup_login_shown', true);
+                $this->dispatch('open-modal', id: 'subscription-modal');
+            }
         }
-
-        $this->dispatch('open-modal', id: 'subscription-modal');
     }
 
     public function renew()

@@ -16,10 +16,12 @@ class ListReviews extends ListRecords
     {
         $actions = [];
         
-        // Only show CreateAction if user is authenticated and has no existing review
+        // Only show CreateAction if user is authenticated, not in grace period, and has no existing review
         if (Auth::check()) {
+            $isGrace = Auth::user()?->getSubscriptionState() === 'expired_grace';
             $existingReview = Review::where('user_id', Auth::id())->first();
-            if (!$existingReview) {
+            
+            if (!$isGrace && !$existingReview) {
                 $actions[] = CreateAction::make();
             }
         }

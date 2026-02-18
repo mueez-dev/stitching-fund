@@ -58,7 +58,7 @@ class WidthrawlRequestResource extends Resource
     public static function canViewAny(): bool
     {
         $user = Auth::user();
-        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+        return $user && $user->role === 'Agency Owner';
     }
     
     public static function getNavigationItems(): array
@@ -86,7 +86,7 @@ class WidthrawlRequestResource extends Resource
             return false;
         }
         
-        // Always show navigation, even during grace period (but with lock icon)
-        return $user && in_array($user->role, ['Super Admin', 'Agency Owner']);
+        // Hide from Super Admin, show only for Agency Owner
+        return $user->role === 'Agency Owner';
     }
 }

@@ -12,11 +12,14 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
 
 class ReviewsTable
 {   
     public static function configure(Table $table): Table
     {
+        $isGrace = Auth::check() && Auth::user()?->getSubscriptionState() === 'expired_grace';
+
         return $table
             ->columns([
                 TextColumn::make('user.name')
@@ -28,7 +31,7 @@ class ReviewsTable
                     ->limit(50)
                     ->searchable()
                     ->wrap(),
-            StarColumnHelper::makeStarRating('rating', 'Rating')
+                StarColumnHelper::makeStarRating('rating', 'Rating')
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
@@ -73,7 +76,7 @@ class ReviewsTable
                     }),
                 Action::make('reject')
                     ->label('Reject')
-                    ->icon('heroicon-o-x-circle')
+                    ->icon('heroicon-o-circle-stack')
                     ->color('danger')
                     ->requiresConfirmation()
                     ->visible(fn ($record) => Auth::check() && Auth::user()->role === 'Super Admin' && $record->status === 'pending')
@@ -81,14 +84,14 @@ class ReviewsTable
                         $record->update(['status' => 'rejected']);
                     }),
                 EditAction::make()
-                    ->visible(fn () => Auth::check() && Auth::user()->role === 'Super Admin'),
+                    ->visible(fn () => !$isGrace && Auth::check() && Auth::user()->role === 'Super Admin'),
                 DeleteAction::make()
-                    ->visible(fn () => Auth::check() && Auth::user()->role === 'Super Admin'),
+                    ->visible(fn () => !$isGrace && Auth::check() && Auth::user()->role === 'Super Admin'),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->visible(fn () => Auth::check() && Auth::user()->role === 'Super Admin'),
+                        ->visible(fn () => !$isGrace && Auth::check() && Auth::user()->role === 'Super Admin'),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

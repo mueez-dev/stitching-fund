@@ -7,13 +7,12 @@ use App\Models\Contact;
 use Filament\Tables\Table;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
-use Illuminate\Support\Facades\Log;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
-use Filament\Tables\Columns\TextColumn;
-use App\Filament\Resources\Contacts\Pages\EditContacts;
-use App\Filament\Resources\Contacts\Pages\ListContacts;
-use App\Filament\Resources\Contacts\Pages\CreateContacts;
+use Illuminate\Database\Eloquent\Model;
+use App\Filament\Resources\Contacts\Pages\EditContacts;    // ✅ Contact pages
+use App\Filament\Resources\Contacts\Pages\ListContacts;    // ✅ Contact pages
+use App\Filament\Resources\Contacts\Pages\CreateContacts;  // ✅ Contact pages
 use App\Filament\Resources\Contacts\Schemas\ContactsForm;
 use App\Filament\Resources\Contacts\Tables\ContactsTable;
 
@@ -37,6 +36,41 @@ class ContactsResource extends Resource
         return $user && $user->role === 'Agency Owner';
     }
 
+    public static function canCreate(): bool
+    {
+        if (!Auth::check()) return false;
+        return Auth::user()?->getSubscriptionState() !== 'expired_grace';
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        if (!Auth::check()) return false;
+        return Auth::user()?->getSubscriptionState() !== 'expired_grace';
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        if (!Auth::check()) return false;
+        return Auth::user()?->getSubscriptionState() !== 'expired_grace';
+    }
+
+    public static function getPages(): array
+    {
+        $isGrace = Auth::check() && Auth::user()?->getSubscriptionState() === 'expired_grace';
+
+        if ($isGrace) {
+            return [
+                'index' => ListContacts::route('/'),  // ✅ Contacts
+            ];
+        }
+
+        return [
+            'index'  => ListContacts::route('/'),     // ✅ Contacts
+            'create' => CreateContacts::route('/create'),
+            'edit'   => EditContacts::route('/{record}/edit'),
+        ];
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ContactsForm::configure($schema);
@@ -49,18 +83,7 @@ class ContactsResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => ListContacts::route('/'),
-            'create' => CreateContacts::route('/create'),
-            'edit' => EditContacts::route('/{record}/edit'),
-        ];
+        return [];
     }
 
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder

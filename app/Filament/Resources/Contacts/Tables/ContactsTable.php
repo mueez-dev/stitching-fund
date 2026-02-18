@@ -8,11 +8,14 @@ use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
+use Illuminate\Support\Facades\Auth;
 
 class ContactsTable
 {
     public static function configure(Table $table): Table
     {
+        $isGrace = Auth::check() && Auth::user()?->getSubscriptionState() === 'expired_grace';
+
         return $table
             ->columns([
                TextColumn::make('name')
@@ -29,12 +32,15 @@ class ContactsTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->disabled($isGrace),
+                DeleteAction::make()
+                    ->disabled($isGrace),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->disabled($isGrace),
                 ]),
             ]);
     }
