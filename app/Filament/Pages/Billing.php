@@ -55,14 +55,36 @@ class Billing extends Page
     {
         $state = $this->getSubscriptionState();
         $graceEndsAt = $this->user->getGraceEndsAt();
+        $expiresAt = $this->user->subscription_expires_at;
         
         return match($state) {
-            'active' => 'Your subscription is active and all features are available.',
-            'expiring' => 'Your subscription will expire soon. Please renew to avoid interruption.',
-            'expired_grace' => "Your subscription has expired. Grace period ends on {$graceEndsAt->format('M d, Y')}. Read-only access enabled.",
-            'locked' => 'Your subscription has expired and account is locked. Please renew to restore access.',
+            'active' => "Your subscription is active and all features are available. Next billing date: {$expiresAt->format('M d, Y')}.",
+            'expiring' => "Your subscription will expire on {$expiresAt->format('M d, Y')}. Please renew to avoid interruption.",
+            'expired_grace' => "Your subscription expired on {$expiresAt->format('M d, Y')}. Grace period ends on {$graceEndsAt->format('M d, Y')} ({$this->user->getGraceTimeRemaining()['short_format']} remaining). Read-only access enabled.",
+            'locked' => "Your subscription expired on {$expiresAt->format('M d, Y')} and grace period has ended. Account is locked. Please renew to restore access.",
             default => 'Subscription status unknown.'
         };
+    }
+    
+    public function getDaysUntilExpiry(): int
+    {
+        if (!$this->user->subscription_expires_at) {
+            return 0;
+        }
+        
+        return now()->diffInDays($this->user->subscription_expires_at, false);
+    }
+    
+    public function getUsageStats(): array
+    {
+        // TODO: Implement actual usage statistics
+        return [
+            'investors_count' => 3,
+            'investors_limit' => 10,
+            'reports_generated' => 12,
+            'storage_used' => '2.3 GB',
+            'storage_limit' => '10 GB'
+        ];
     }
     
     public function renewSubscription(): void
@@ -81,6 +103,43 @@ class Billing extends Page
         Notification::make()
             ->title('Coming Soon')
             ->body('Payment history will be available soon.')
+            ->info()
+            ->send();
+    }
+    
+    public function downloadInvoices(): void
+    {
+        // TODO: Implement invoice download
+        Notification::make()
+            ->title('Coming Soon')
+            ->body('Invoice download will be available soon.')
+            ->info()
+            ->send();
+    }
+    
+    public function manageBilling(): void
+    {
+        // TODO: Implement billing settings
+        Notification::make()
+            ->title('Coming Soon')
+            ->body('Billing settings will be available soon.')
+            ->info()
+            ->send();
+    }
+    
+    public function getPaymentMethods(): array
+    {
+        // TODO: Implement payment methods retrieval from database
+        // For now, return empty array to show the "no payment methods" state
+        return [];
+    }
+    
+    public function addPaymentMethod(): void
+    {
+        // TODO: Implement payment method addition (Stripe integration)
+        Notification::make()
+            ->title('Coming Soon')
+            ->body('Payment method addition will be available soon.')
             ->info()
             ->send();
     }
