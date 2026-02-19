@@ -565,178 +565,135 @@
         </div>
     </div>
 
-    {{-- ═══════════════════════════════════════ --}}
-    {{-- PLANS --}}
-    {{-- ═══════════════════════════════════════ --}}
-    <div class="plans-section">
-        <div class="section-title">Choose Your Plan</div>
-        <div class="section-sub">Upgrade anytime — changes take effect immediately</div>
-
-        <div class="plans-grid">
-            {{-- Starter --}}
-            <div class="plan-card">
-                <div class="plan-name">Starter</div>
-                <div class="plan-price">$29</div>
-                <div class="plan-period">per month</div>
-                <ul class="plan-features">
-                    <li>Up to 10 investors</li>
-                    <li>Basic reporting</li>
-                    <li>Email support</li>
-                </ul>
-                <button class="plan-btn plan-btn-default">Current Plan</button>
-            </div>
-
-            {{-- Professional --}}
-            <div class="plan-card featured">
-                <div class="plan-badge">⭐ Most Popular</div>
-                <div class="plan-name">Professional</div>
-                <div class="plan-price">$79</div>
-                <div class="plan-period">per month</div>
-                <ul class="plan-features">
-                    <li>Up to 50 investors</li>
-                    <li>Advanced analytics</li>
-                    <li>Priority support</li>
-                    <li>Custom branding</li>
-                </ul>
-                <button class="plan-btn plan-btn-gold" wire:click="renewSubscription">Upgrade Now</button>
-            </div>
-
-            {{-- Enterprise --}}
-            <div class="plan-card">
-                <div class="plan-name">Enterprise</div>
-                <div class="plan-price">$199</div>
-                <div class="plan-period">per month</div>
-                <ul class="plan-features">
-                    <li>Unlimited investors</li>
-                    <li>Custom features</li>
-                    <li>Dedicated support</li>
-                    <li>API access</li>
-                </ul>
-                <button class="plan-btn plan-btn-purple" wire:click="renewSubscription">Contact Sales</button>
-            </div>
-        </div>
+   {{-- PLANS --}}
+<div class="plans-section">
+    <div class="section-title">Choose Your Plan</div>
+    <div class="section-sub">
+        @if($this->getSubscriptionState() === 'locked')
+            ⚠️ Your account is locked. Renew to restore full access.
+        @elseif($this->getSubscriptionState() === 'expired_grace')
+            ⚠️ Grace period active. Renew before access is locked.
+        @elseif($this->getSubscriptionState() === 'expiring')
+            Your subscription expires soon. Renew now to extend from your current expiry date.
+        @else
+            Upgrade anytime — changes take effect immediately
+        @endif
     </div>
 
-    {{-- ═══════════════════════════════════════ --}}
-    {{-- USAGE STATS --}}
-    {{-- ═══════════════════════════════════════ --}}
-    <div class="stats-section">
-        <div class="section-title">Usage Statistics</div>
-        <div class="section-sub">Your current usage this billing cycle</div>
+    <div class="plans-grid">
+        {{-- Starter --}}
+        <div class="plan-card">
+            <div class="plan-name">Starter</div>
+            <div class="plan-price">$29</div>
+            <div class="plan-period">per month</div>
+            <ul class="plan-features">
+                <li>Up to 10 investors</li>
+                <li>Basic reporting</li>
+                <li>Email support</li>
+            </ul>
+            <button class="plan-btn plan-btn-default" disabled>Current Plan</button>
+        </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number blue">{{ $this->getUsageStats()['investors_count'] }}</div>
-                <div class="stat-label">of {{ $this->getUsageStats()['investors_limit'] }} investors</div>
-                <div class="stat-bar">
-                    <div class="stat-bar-fill blue" style="width: {{ ($this->getUsageStats()['investors_count'] / $this->getUsageStats()['investors_limit']) * 100 }}%"></div>
-                </div>
-            </div>
+        {{-- Professional --}}
+        <div class="plan-card featured">
+            <div class="plan-badge">⭐ Most Popular</div>
+            <div class="plan-name">Professional</div>
+            <div class="plan-price">PKR 3,000</div>
+            <div class="plan-period">per 30 days</div>
+            <ul class="plan-features">
+                <li>Up to 50 investors</li>
+                <li>Advanced analytics</li>
+                <li>Priority support</li>
+                <li>Custom branding</li>
+            </ul>
 
-            <div class="stat-card">
-                <div class="stat-number green">{{ $this->getUsageStats()['reports_generated'] }}</div>
-                <div class="stat-label">reports this month</div>
-            </div>
+            @if($this->getSubscriptionState() === 'active')
+                <button class="plan-btn plan-btn-default" disabled>✓ Currently Active</button>
+            @elseif($this->getSubscriptionState() === 'expiring')
+                <button class="plan-btn plan-btn-gold" wire:click="renewSubscription" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="renewSubscription">🔄 Extend Subscription</span>
+                    <span wire:loading wire:target="renewSubscription">Processing...</span>
+                </button>
+                <p style="font-size:0.7rem; color:#C9A84C; text-align:center; margin-top:0.5rem;">
+                    Will extend from your expiry date
+                </p>
+            @elseif($this->getSubscriptionState() === 'expired_grace')
+                <button class="plan-btn plan-btn-gold" wire:click="renewSubscription" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="renewSubscription">⚡ Renew Now</span>
+                    <span wire:loading wire:target="renewSubscription">Processing...</span>
+                </button>
+                <p style="font-size:0.7rem; color:#FB923C; text-align:center; margin-top:0.5rem;">
+                    30 days from today
+                </p>
+            @elseif($this->getSubscriptionState() === 'locked')
+                <button class="plan-btn plan-btn-gold" wire:click="renewSubscription" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="renewSubscription">🔓 Unlock Account</span>
+                    <span wire:loading wire:target="renewSubscription">Processing...</span>
+                </button>
+                <p style="font-size:0.7rem; color:#F87171; text-align:center; margin-top:0.5rem;">
+                    30 days from today
+                </p>
+            @endif
+        </div>
 
-            <div class="stat-card">
-                <div class="stat-number purple">{{ $this->getUsageStats()['storage_used'] }}</div>
-                <div class="stat-label">of {{ $this->getUsageStats()['storage_limit'] }} storage</div>
-                <div class="stat-bar">
-                    <div class="stat-bar-fill purple" style="width: 23%"></div>
-                </div>
-            </div>
+        {{-- Enterprise --}}
+        <div class="plan-card">
+            <div class="plan-name">Enterprise</div>
+            <div class="plan-price">Custom</div>
+            <div class="plan-period">contact us</div>
+            <ul class="plan-features">
+                <li>Unlimited investors</li>
+                <li>Custom features</li>
+                <li>Dedicated support</li>
+                <li>API access</li>
+            </ul>
+            <button class="plan-btn plan-btn-purple" wire:click="manageBilling">Contact Sales</button>
+        </div>
+    </div>
+</div>
 
-            <div class="stat-card">
-                <div class="stat-number gold">{{ $this->getDaysUntilExpiry() }}</div>
-                <div class="stat-label">days remaining</div>
-                @if($this->getDaysUntilExpiry() <= 7)
-                <div style="font-size:0.7rem; color:#F87171; font-weight:600; margin-top:0.5rem;">⚠ Renew soon</div>
+   {{-- QUICK ACTIONS --}}
+<div class="actions-section">
+    <div class="section-title">Quick Actions</div>
+    <div class="section-sub">Shortcuts to manage your account</div>
+
+    <div class="actions-grid">
+        @if(in_array($this->getSubscriptionState(), ['expiring', 'expired_grace', 'locked']))
+        <button class="action-card renew" wire:click="renewSubscription" wire:loading.attr="disabled">
+            <span class="action-icon">
+                @if($this->getSubscriptionState() === 'locked') 🔓
+                @elseif($this->getSubscriptionState() === 'expiring') 🔄
+                @else ⚡
+                @endif
+            </span>
+            <div class="action-name">
+                @if($this->getSubscriptionState() === 'locked') Unlock Account
+                @elseif($this->getSubscriptionState() === 'expiring') Extend Plan
+                @else Renew Now
                 @endif
             </div>
-        </div>
+            <div class="action-desc">
+                @if($this->getSubscriptionState() === 'locked') Restore full access
+                @elseif($this->getSubscriptionState() === 'expiring') Extend from expiry date
+                @else 30 days from today
+                @endif
+            </div>
+        </button>
+        @endif
+
+        <button class="action-card history" wire:click="viewHistory">
+            <span class="action-icon">📋</span>
+            <div class="action-name">Payment History</div>
+            <div class="action-desc">View transactions</div>
+        </button>
+
+        <button class="action-card invoice" wire:click="downloadInvoices">
+            <span class="action-icon">📥</span>
+            <div class="action-name">Invoices</div>
+            <div class="action-desc">Download PDF copies</div>
+        </button>
     </div>
-
-    {{-- ═══════════════════════════════════════ --}}
-    {{-- PAYMENT METHODS --}}
-    {{-- ═══════════════════════════════════════ --}}
-    <div class="payment-section">
-        <div class="payment-header">
-            <div>
-                <div class="section-title">Payment Methods</div>
-                <div class="section-sub" style="margin-bottom:0;">Manage your saved payment options</div>
-            </div>
-            <button class="add-btn" wire:click="addPaymentMethod">
-                <span>＋</span> Add Method
-            </button>
-        </div>
-
-        <div class="payment-card">
-            <div class="payment-card-left">
-                <div class="payment-icon">💳</div>
-                <div>
-                    <div class="payment-name">
-                        Visa ending in 4242
-                        <span class="default-badge">Default</span>
-                    </div>
-                    <div class="payment-meta">Expires 12/2025</div>
-                </div>
-            </div>
-            <div class="payment-actions">
-                <button class="btn-edit">Edit</button>
-                <button class="btn-remove">Remove</button>
-            </div>
-        </div>
-
-        <div class="payment-card">
-            <div class="payment-card-left">
-                <div class="payment-icon">🏦</div>
-                <div>
-                    <div class="payment-name">Bank Account ending in 6789</div>
-                    <div class="payment-meta">Checking account</div>
-                </div>
-            </div>
-            <div class="payment-actions">
-                <button class="btn-edit">Edit</button>
-                <button class="btn-remove">Remove</button>
-            </div>
-        </div>
-    </div>
-
-    {{-- ═══════════════════════════════════════ --}}
-    {{-- QUICK ACTIONS --}}
-    {{-- ═══════════════════════════════════════ --}}
-    <div class="actions-section">
-        <div class="section-title">Quick Actions</div>
-        <div class="section-sub">Shortcuts to manage your account</div>
-
-        <div class="actions-grid">
-            @if(in_array($this->getSubscriptionState(), ['expiring', 'expired_grace', 'locked']))
-            <button class="action-card renew" wire:click="renewSubscription">
-                <span class="action-icon">💳</span>
-                <div class="action-name">Renew Now</div>
-                <div class="action-desc">Restore full access</div>
-            </button>
-            @endif
-
-            <button class="action-card history" wire:click="viewHistory">
-                <span class="action-icon">📋</span>
-                <div class="action-name">Payment History</div>
-                <div class="action-desc">View transactions</div>
-            </button>
-
-            <button class="action-card invoice" wire:click="downloadInvoices">
-                <span class="action-icon">📥</span>
-                <div class="action-name">Invoices</div>
-                <div class="action-desc">Download PDF copies</div>
-            </button>
-
-            <button class="action-card settings" wire:click="manageBilling">
-                <span class="action-icon">⚙️</span>
-                <div class="action-name">Billing Settings</div>
-                <div class="action-desc">Manage preferences</div>
-            </button>
-        </div>
-    </div>
+</div>
 
 </div>
 

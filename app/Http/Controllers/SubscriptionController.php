@@ -101,9 +101,7 @@ class SubscriptionController extends Controller
                             'quantity' => 1,
                         ]],
                         'mode' => 'payment',
-                        'success_url' => route('subscription.callback') . '?session_id={CHECKOUT_SESSION_ID}',
-                        'cancel_url' => route('subscription.show'),
-                        'metadata' => [
+                        'success_url' => config('app.url') . route('subscription.callback', [], false) . '?session_id=' . '{CHECKOUT_SESSION_ID}',                        'metadata' => [
                             'plan' => 'Agency Owner Plan',
                             'user_email' => $email,
                             'is_new_user' => $user ? 'false' : 'true'
@@ -145,142 +143,162 @@ class SubscriptionController extends Controller
         }
     }
     
-    /**
+   /**
      * Handle payment callback from Stripe
      */
-    public function paymentCallback(Request $request)
-    {
-        $sessionId = $request->get('session_id');
-        
-        if ($sessionId) {
-            Stripe::setApiKey(env('STRIPE_SECRET'));
-            
-            try {
-                $session = Session::retrieve($sessionId);
-                
-                if ($session->payment_status === 'paid' || $session->payment_status === 'complete') {
-                    // Check if this is a new user registration from session
-                    $pendingEmail = session('pending_user_email');
-                    $pendingName = session('pending_user_name');
-                    
-                    if ($pendingEmail && $pendingName) {
-                        // Check if user already exists (in case they registered during payment)
-                        $existingUser = User::where('email', $pendingEmail)->first();
-                        
-                        if (!$existingUser) {
-                            // Create new user account
-                            $user = User::create([
-                                'name' => $pendingName,
-                                'email' => $pendingEmail,
-                                'password' => bcrypt(Str::random(12)), // Random password
-                                'role' => 'Agency Owner',
-                                'email_verified_at' => now(),
-                                'subscription_status' => 'active',
-                                'subscription_expires_at' => Carbon::now()->addDays(30),
-                                'status' => 'active'
-                            ]);
-                          
-                            // Create payment record
-                            Payment::create([
-                                'user_id' => $user->id,
-                                'charge_id' => $session->payment_intent ?? $session->id,
-                                'transaction_id' => $session->payment_intent,
-                                'amount' => 3000.00,
-                                'currency' => 'pkr',
-                                'status' => 'completed',
-                                'payment_method' => 'stripe',
-                                'metadata' => [
-                                    'plan_type' => 'Agency Owner Plan',
-                                    'subscription_duration' => '30 days',
-                                    'user_email' => $user->email,
-                                ],
-                                'stripe_response' => $session->toArray(),
-                            ]);
-                            
-                            Log::info('New user account created after payment', [
-                                'user_id' => $user->id,
-                                'email' => $pendingEmail
-                            ]);
-                        } else {
-                            // User exists, just activate subscription
-                            $user = $existingUser;
-                            $user->update([
-                                'subscription_status' => 'active',
-                                'subscription_expires_at' => Carbon::now()->addDays(30),
-                                'status' => 'active'
-                            ]);
-                            // Create payment record
-                            Payment::create([
-                                'user_id' => $user->id,
-                                'charge_id' => $session->payment_intent ?? $session->id,
-                                'transaction_id' => $session->payment_intent,
-                                'amount' => 3000.00,
-                                'currency' => 'pkr',
-                                'status' => 'completed',
-                                'payment_method' => 'stripe',
-                                'metadata' => [
-                                    'plan_type' => 'Agency Owner Plan',
-                                    'subscription_duration' => '30 days',
-                                    'user_email' => $user->email,
-                                ],
-                                'stripe_response' => $session->toArray(),
-                            ]);
-                        }
-                        
-                        // Clear pending user session
-                        session()->forget(['pending_user_email', 'pending_user_name', 'pending_subscription']);
-                        
-                        return redirect()->route('filament.admin.auth.login')
-                            ->with('success', 'Payment successful! Your account is now active. Please login to continue.');
+  public function paymentCallback(Request $request)
+{
+
+     Log::info('=== CALLBACK FIRED ===', [
+        'session_id' => $request->get('session_id'),
+        'full_url'   => $request->fullUrl(),
+        'all_input'  => $request->all(),
+    ]);
+
+    $sessionId = $request->get('session_id');
+
+    if (!$sessionId) {
+        return redirect()->route('subscription.show')
+            ->with('error', 'Payment verification failed.');
+    }
+
+    try {
+        Stripe::setApiKey(config('services.stripe.secret'));
+
+        $client = new \Stripe\HttpClient\CurlClient();
+        $client->setTimeout(120);
+        $client->setConnectTimeout(30);
+        \Stripe\ApiRequestor::setHttpClient($client);
+
+        $session = Session::retrieve($sessionId);
+
+        if ($session->payment_status === 'paid' || $session->payment_status === 'complete') {
+
+            $isRenewal = ($session->metadata['is_renewal'] ?? 'false') === 'true';
+
+            if (!$isRenewal) {
+                // ─── NEW USER FLOW ───────────────────────────
+                $pendingEmail = session('pending_user_email');
+                $pendingName  = session('pending_user_name');
+
+                // fallback to metadata if session was lost
+                $pendingEmail = $pendingEmail ?? ($session->metadata['user_email'] ?? null);
+
+                if ($pendingEmail) {
+                    $existingUser = User::where('email', $pendingEmail)->first();
+                    if (!$existingUser) {
+                        $user = User::create([
+                            'name'                    => $pendingName ?? 'User',
+                            'email'                   => $pendingEmail,
+                            'password'                => bcrypt(Str::random(12)),
+                            'role'                    => 'Agency Owner',
+                            'email_verified_at'       => now(),
+                            'subscription_status'     => 'active',
+                            'subscription_expires_at' => Carbon::now()->addDays(30),
+                            'status'                  => 'active'
+                        ]);
                     } else {
-                        // Existing authenticated user - activate subscription
-                        $user = Auth::user();
-                        if ($user) {
-                            $user->update([
-                                'subscription_status' => 'active',
-                                'subscription_expires_at' => Carbon::now()->addDays(30)
-                            ]);
-                            
-                            // Create payment record
-                            Payment::create([
-                                'user_id' => $user->id,
-                                'charge_id' => $session->payment_intent ?? $session->id,
-                                'transaction_id' => $session->payment_intent,
-                                'amount' => 3000.00,
-                                'currency' => 'pkr',
-                                'status' => 'completed',
-                                'payment_method' => 'stripe',
-                                'metadata' => [
-                                    'plan_type' => 'Agency Owner Plan',
-                                    'subscription_duration' => '30 days',
-                                    'user_email' => $user->email,
-                                ],
-                                'stripe_response' => $session->toArray(),
-                            ]);
-                            
-                            return redirect()->route('filament.admin.pages.dashboard')
-                                ->with('success', 'Subscription activated successfully!');
-                        }
+                        $user = $existingUser;
+                        $user->update([
+                            'subscription_status'     => 'active',
+                            'subscription_expires_at' => Carbon::now()->addDays(30),
+                            'status'                  => 'active'
+                        ]);
                     }
+
+                    Payment::create([
+                        'user_id'         => $user->id,
+                        'charge_id'       => $session->payment_intent ?? $session->id,
+                        'transaction_id'  => $session->payment_intent,
+                        'amount'          => 3000.00,
+                        'currency'        => 'pkr',
+                        'status'          => 'completed',
+                        'payment_method'  => 'stripe',
+                        'metadata'        => ['plan_type' => 'Agency Owner Plan', 'user_email' => $user->email],
+                        'stripe_response' => $session->toArray(),
+                    ]);
+
+                    session()->forget(['pending_user_email', 'pending_user_name', 'pending_subscription']);
+
+                    return redirect()->route('filament.admin.auth.login')
+                        ->with('success', 'Payment successful! Please login.');
                 }
-            } catch (\Exception $e) {
-                Log::error('Stripe callback error', [
-                    'error' => $e->getMessage(),
-                    'session_id' => $sessionId,
-                    'payment_status' => $session->payment_status ?? 'unknown'
-                ]);
-                
-                // Debug: Log session data for troubleshooting
-                Log::info('Stripe session data', [
-                    'session_id' => $sessionId,
-                    'session' => $session->toArray()
-                ]);
+
+            } else {
+                // ─── RENEWAL FLOW ────────────────────────────
+                // Always clear stale session data first
+                session()->forget(['pending_user_email', 'pending_user_name', 'pending_subscription']);
+
+                $userId    = $session->metadata['user_id'] ?? null;
+                $userEmail = $session->metadata['user_email'] ?? null;
+
+                $user = null;
+                if ($userId) $user = User::find($userId);
+                if (!$user && $userEmail) $user = User::where('email', $userEmail)->first();
+
+                if ($user) {
+                    $newExpiry = isset($session->metadata['new_expiry'])
+                        ? Carbon::parse($session->metadata['new_expiry'])
+                        : Carbon::now()->addDays(30);
+
+                    Log::info('Processing renewal for user', [
+                        'user_id'    => $user->id,
+                        'user_email' => $user->email,
+                        'new_expiry' => $newExpiry
+                    ]);
+
+                    \Illuminate\Support\Facades\DB::table('users')
+                        ->where('id', $user->id)
+                        ->update([
+                            'subscription_status'     => 'active',
+                            'subscription_expires_at' => $newExpiry,
+                            'status'                  => 'active',
+                            'updated_at'              => now(),
+                        ]);
+
+                    session()->forget([
+                        'locked_popup_shown',
+                        'grace_popup_login_shown',
+                        'expiring_popup_shown',
+                        'locked_notification_sent',
+                    ]);
+
+                    Payment::create([
+                        'user_id'         => $user->id,
+                        'charge_id'       => $session->payment_intent ?? $session->id,
+                        'transaction_id'  => $session->payment_intent,
+                        'amount'          => 3000.00,
+                        'currency'        => 'pkr',
+                        'status'          => 'completed',
+                        'payment_method'  => 'stripe',
+                        'metadata'        => [
+                            'plan_type'  => 'Agency Owner Plan - Renewal',
+                            'new_expiry' => $newExpiry->format('Y-m-d'),
+                            'user_email' => $user->email,
+                        ],
+                        'stripe_response' => $session->toArray(),
+                    ]);
+
+                    Log::info('Renewal completed successfully', [
+                        'user_id'    => $user->id,
+                        'new_expiry' => $newExpiry
+                    ]);
+
+                    return redirect()->route('filament.admin.pages.billing')
+                        ->with('success', 'Subscription renewed until ' . $newExpiry->format('M d, Y') . '!');
+                }
+
+                Log::error('Renewal: User not found', ['user_id' => $userId, 'user_email' => $userEmail]);
             }
         }
-        
-        return redirect()->route('subscription.show')
-            ->with('error', 'Payment verification failed. Please contact support.');
+
+    } catch (\Exception $e) {
+        Log::error('Stripe callback error', ['error' => $e->getMessage(), 'session_id' => $sessionId]);
     }
+
+    return redirect()->route('subscription.show')
+        ->with('error', 'Payment verification failed. Please contact support.');
+}
     
     /**
      * Check current subscription status

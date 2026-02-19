@@ -68,11 +68,13 @@ class CheckUserStatus
 
         switch ($state) {
 
-           case 'locked':
+         case 'locked':
     if (!$request->routeIs('filament.admin.pages.billing') && 
         !$request->is('admin/billing*') &&
-        !$request->is('admin') &&           // ← Dashboard allow
-        !$request->routeIs('filament.admin.pages.dashboard')) {  // ← Dashboard route allow
+        !$request->is('admin') &&
+        !$request->routeIs('filament.admin.pages.dashboard') &&
+        !$request->routeIs('subscription.callback') &&  // ← YEH ADD KARO
+        !$request->is('subscription/callback*')) {       // ← YEH BHI ADD KARO
         
         if (!session()->has('locked_notification_sent')) {
             Notification::make()->title('Account Locked')->body('Your subscription has expired. Please renew to continue.')->danger()->send();

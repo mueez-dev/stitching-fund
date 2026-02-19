@@ -24,8 +24,9 @@ class CheckAgencySubscription
             $subscriptionState = $user->getSubscriptionState();
             if ($subscriptionState === 'locked') {
                 // Allow access to subscription page, logout, dashboard, and root route
-                $allowedRoutes = [
+              $allowedRoutes = [
                     'subscription.show', 
+                    'subscription.callback',  // ← YEH ADD KARO
                     'filament.admin.auth.logout', 
                     'filament.admin.auth.login', 
                     'filament.admin.pages.dashboard',

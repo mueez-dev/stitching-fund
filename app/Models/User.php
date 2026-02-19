@@ -238,7 +238,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
         }
 
         // If subscription is expiring soon (e.g., within 7 days)
-        if ($expiryDate->diffInDays(now()) <= 7) {
+        $daysUntilExpiry = now()->diffInDays($expiryDate, false);
+        if ($daysUntilExpiry <= 7 && $daysUntilExpiry >= 0) {
             return 'expiring';
         }
 

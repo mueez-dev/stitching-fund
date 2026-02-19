@@ -145,21 +145,32 @@ class SubscriptionTimerWidget extends StatsOverviewWidget
             ->descriptionIcon($statusIcon)
             ->color($statusColor);
             
-        // Update renew link to proper route
-        $renewUrl = $user->hasActiveSubscription() ? '#' : route('subscription.show');
-        $renewColor = $user->hasActiveSubscription() ? 'gray' : 'primary';
-        $renewLabel = $user->hasActiveSubscription() ? 'Already Active' : 'Click to Renew';
-        $renewDescription = $user->hasActiveSubscription() ? 'Subscription is active' : 'Renew your subscription';
+        // Show renew button only when subscription is expiring soon (7 days or less) or expired
+        $daysUntilExpiry = $user->subscription_expires_at ? now()->diffInDays($user->subscription_expires_at, false) : 0;
         
-        $stats[] = Stat::make('Renew Subscription', $renewLabel)
-            ->description($renewDescription)
-            ->descriptionIcon('heroicon-m-credit-card')
-            ->color($renewColor)
-            ->url($renewUrl)
-            ->openUrlInNewTab()
-            ->extraAttributes([
-                'style' => 'cursor: pointer; color: white; padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600;',
-            ]);
+        if ($daysUntilExpiry <= 7 && $daysUntilExpiry >= 0) {
+            // Expiring soon - show renew button
+            $stats[] = Stat::make('Renew Now', 'Extend Subscription')
+                ->description('Only ' . $daysUntilExpiry . ' days left')
+                ->descriptionIcon('heroicon-m-exclamation-triangle')
+                ->color('warning')
+                ->url(route('filament.admin.pages.billing'))
+                ->openUrlInNewTab(false)
+                ->extraAttributes([
+                    'style' => 'cursor: pointer; color: white; padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600;',
+                ]);
+        } elseif ($daysUntilExpiry < 0) {
+            // Expired - show renew button
+            $stats[] = Stat::make('Renew Now', 'Subscription Expired')
+                ->description('Renew to restore access')
+                ->descriptionIcon('heroicon-m-exclamation-circle')
+                ->color('danger')
+                ->url(route('filament.admin.pages.billing'))
+                ->openUrlInNewTab(false)
+                ->extraAttributes([
+                    'style' => 'cursor: pointer; color: white; padding: 8px 16px; border-radius: 6px; border: none; font-weight: 600;',
+                ]);
+        }
         
         return $stats;
     }
