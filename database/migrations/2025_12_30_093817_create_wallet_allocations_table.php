@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('amount', 15, 2);
             $table->timestamps();
             
-            $table->index(['wallet_id', 'investor_id', 'investment_pool_id']);
+            $table->index(['wallet_id', 'investor_id', 'investment_pool_id'], 'wallet_allocations_composite_index');
         });
     }
 
