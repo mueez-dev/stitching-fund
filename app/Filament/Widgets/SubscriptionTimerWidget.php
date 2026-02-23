@@ -18,7 +18,7 @@ class SubscriptionTimerWidget extends StatsOverviewWidget
     {
         $user = Auth::user();
         return $user && 
-               ($user->role === 'Agency Owner' || $user->role === 'Super Admin') && 
+               $user->role === 'Agency Owner' && 
                $user->subscription_expires_at;
     }
     
