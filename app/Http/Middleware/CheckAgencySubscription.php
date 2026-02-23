@@ -18,7 +18,7 @@ class CheckAgencySubscription
     {
         $user = Auth::user();
         
-        // Only check subscription for Agency Owners
+        // Only check subscription for Agency Owners (skip Super Admin and Investor)
         if ($user && $user->role === 'Agency Owner') {
             // Check if user can access features (not locked)
             $subscriptionState = $user->getSubscriptionState();

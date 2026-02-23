@@ -214,8 +214,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
 
     public function getSubscriptionState(): string
     {
-        // Skip for demo users
-        if ($this->is_demo) {
+        // Skip for demo users, Super Admin, and Investor
+        if ($this->is_demo || $this->role === 'Super Admin' || $this->role === 'Investor') {
             return 'active';
         }
 
