@@ -33,6 +33,7 @@ class ContactsForm
                     'investor' => 'Investor',
                     'employee' => 'Employee',
                 ])
+                ->label('C type')
                 ->required(),
                
             ]);

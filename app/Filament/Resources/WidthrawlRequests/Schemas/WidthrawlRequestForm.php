@@ -30,6 +30,7 @@ class WidthrawlRequestForm
                     ->columnSpan(1),
                 TextInput::make('approved_amount')
                     ->numeric()
+                    ->minValue(0)
                     ->prefix('PKR')
                     ->label('Approved Amount')
                     ->helperText('Leave empty to use requested amount')

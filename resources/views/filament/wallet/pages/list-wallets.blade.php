@@ -490,6 +490,26 @@
             </a>
             @endif
 
+            @if($wallet->slip_path)
+            <div style="
+                text-align: center;
+                padding: clamp(0.75rem, 2.5vw, 0.9rem);
+                border-radius: 0.6rem;
+                background: linear-gradient(135deg, #059669, #047857);
+                color: white;
+                font-weight: 600;
+                font-size: clamp(0.85rem, 2.8vw, 1rem);
+                box-shadow: 0 0 25px rgba(5, 150, 105, 0.7);
+                cursor: pointer;
+                transition: all 0.3s ease;
+            "
+            onmouseover="this.style.background='linear-gradient(135deg, #047857, #065f46)'"
+            onmouseout="this.style.background='linear-gradient(135deg, #059669, #047857)'"
+            onclick="window.open('{{ asset('storage/' . $wallet->slip_path) }}', '_blank')">
+               View Slip
+            </div>
+            @endif
+
             <div style="
                 text-align: center;
                 padding: clamp(0.75rem, 2.5vw, 0.9rem);

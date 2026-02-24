@@ -44,6 +44,7 @@ class MaterialsRelationManager extends RelationManager
                 Forms\Components\TextInput::make('rate')
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->live(onBlur: true)
                     ->afterStateUpdated(function ($state, callable $set, $get) {
                         $quantity = $get('quantity');
@@ -54,6 +55,7 @@ class MaterialsRelationManager extends RelationManager
                 Forms\Components\TextInput::make('quantity')
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->live(onBlur: true)
                     ->afterStateUpdated(function ($state, callable $set, $get) {
                         $rate = $get('rate');
@@ -64,6 +66,7 @@ class MaterialsRelationManager extends RelationManager
                 Forms\Components\TextInput::make('price')
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->disabled()
                     ->dehydrated(),
             ]);

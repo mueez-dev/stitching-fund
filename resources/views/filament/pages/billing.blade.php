@@ -229,11 +229,14 @@
 
     .plan-price {
         font-family: 'Syne', sans-serif;
-        font-size: 2.5rem;
+        font-size: 1.8rem;
         font-weight: 800;
         color: #fff;
         line-height: 1;
         margin-bottom: 0.25rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
     }
 
     .plan-card.featured .plan-price { color: var(--gold-light); }

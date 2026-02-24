@@ -34,6 +34,7 @@ class Billing extends Page
         $user = Auth::user();
         if (!$user) return false;
         if ($user->role === 'Super Admin') return false;
+        if ($user->role === 'Investor') return false;
         return true;
     }
 

@@ -49,6 +49,7 @@ class ExpenseRelationManager extends RelationManager
                 Forms\Components\TextInput::make('rate')
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->live(onBlur: true)
                     ->afterStateUpdated(function ($state, callable $set, $get) {
                         $pieces = (float) $get('pieces');
@@ -59,6 +60,7 @@ class ExpenseRelationManager extends RelationManager
                 Forms\Components\TextInput::make('pieces')
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->live(onBlur: true)
                     ->afterStateUpdated(function ($state, callable $set, $get) {
                         $rate = (float) $get('rate');
@@ -69,6 +71,7 @@ class ExpenseRelationManager extends RelationManager
                 Forms\Components\TextInput::make('price')
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->disabled()
                     ->dehydrated(),
             ]);

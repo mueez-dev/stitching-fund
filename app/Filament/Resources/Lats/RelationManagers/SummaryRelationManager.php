@@ -193,6 +193,7 @@ class SummaryRelationManager extends RelationManager
                             ->label('Profit Margin (%)')
                             ->helperText('How much profit do you want to make?')
                             ->numeric()
+                            ->minValue(0)
                             ->default($lat->profit_percentage ?? 20)
                             ->required(),
 

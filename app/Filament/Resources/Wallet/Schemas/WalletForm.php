@@ -45,6 +45,7 @@ class WalletForm
             Forms\Components\TextInput::make('total_deposits')
                 ->label('Deposit Amount')
                 ->numeric()
+                ->minValue(0)
                 ->required()
                 ->helperText('This will be added to lifetime deposits'),
             Forms\Components\Select::make('slip_type')

@@ -8,6 +8,7 @@ use App\Models\Wallet;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Illuminate\Support\Facades\Auth;
@@ -186,6 +187,12 @@ class WalletTable
                 ViewAction::make()
                     ->label('View Details')
                     ->icon('heroicon-o-eye'),
+                Action::make('view_slip')
+                    ->label('View Slip')
+                    ->icon('heroicon-o-document-text')
+                    ->url(fn (Wallet $record): string => $record->slip_path ? asset('storage/' . $record->slip_path) : '#')
+                    ->openUrlInNewTab()
+                    ->visible(fn (Wallet $record): bool => !empty($record->slip_path)),
                 EditAction::make()
                     ->label('Edit')
                     ->icon('heroicon-o-pencil')
