@@ -35,6 +35,10 @@ class UsersResource extends Resource
         return UsersTable::configure($table);
     }
 
+    public static function canCreate(): bool
+{
+    return false; // Nobody can create users
+}
     public static function getRelations(): array
     {
         return [
